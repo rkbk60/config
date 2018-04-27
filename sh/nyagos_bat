@@ -1,0 +1,7 @@
+
+alias "vim=vim $* -T xterm"
+alias "grep=ag $*"
+
+set "PROMPT=$_%USERNAME%:$P$_$$$s"
+
+rem vim:set ft=dosbatch:

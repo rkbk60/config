@@ -1,0 +1,31 @@
+
+source ~/settings/vim/functions.vim
+set guioptions-=T
+set guioptions-=r
+set guioptions-=R
+set guioptions-=l
+set guioptions-=L
+set guioptions-=b
+set guioptions-=e
+set guioptions+=a
+set guioptions-=m
+
+if has('win32') || !has('nvim')
+    set renderoptions=type:directx,renmode:5
+endif
+
+" font setting
+try
+    if has('nvim') && exists('g:GuiLoaded')
+        "
+    elseif has('unix')
+        set guifont=Cica\ 9
+    elseif has('win32')
+        set guifont=GenEi_Gothic_M_SemiBold:h10
+    endif
+catch
+endtry
+
+if g:IsPlugged('onedark.vim')
+    color onedark
+endif

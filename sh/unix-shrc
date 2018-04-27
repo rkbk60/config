@@ -1,0 +1,7 @@
+#!/bin/sho
+
+force_color_prompt=yes
+
+# set aliases
+alias pof='shutdown now'
+alias blk='echo -e "\n\n\n\n\n\n"'

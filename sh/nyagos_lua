@@ -1,0 +1,6 @@
+
+nyagos.prompt = function(this)
+    local name = nyagos.getenv('USERNAME')
+
+
+-- vim:set ft=lua: --
