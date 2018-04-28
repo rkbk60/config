@@ -53,8 +53,6 @@ vnoremap <C-Up> "zdd<Up>"zP
 vnoremap <C-Down> "zdd"zp
 vnoremap < <gv
 vnoremap > >gv
-nnoremap < <<
-nnoremap > >>
 noremap + <C-a>
 noremap - <C-x>
 inoremap <C-Backspace> <ESC>ciw

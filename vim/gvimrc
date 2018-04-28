@@ -1,5 +1,4 @@
 
-source ~/settings/vim/functions.vim
 set guioptions-=T
 set guioptions-=r
 set guioptions-=R
@@ -16,9 +15,7 @@ endif
 
 " font setting
 try
-    if has('nvim') && exists('g:GuiLoaded')
-        "
-    elseif has('unix')
+    if has('unix')
         set guifont=Cica\ 9
     elseif has('win32')
         set guifont=GenEi_Gothic_M_SemiBold:h10
@@ -28,4 +25,6 @@ endtry
 
 if g:IsPlugged('onedark.vim')
     color onedark
+else
+    set background=dark
 endif

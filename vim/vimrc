@@ -33,8 +33,6 @@ exec 'source '.s:vimplug
 
 if filereadable(s:vimplug)
     call plug#begin(s:plugins)
-    let g:vimproc#download_windows_dll = 1
-    Plug 'Shougo/vimproc.vim', {'do': 'make'}
     Plug 'joshdick/onedark.vim'
     Plug 'sheerun/vim-polyglot'
     Plug 'ctrlpvim/ctrlp.vim'
@@ -143,8 +141,6 @@ vnoremap <C-Up> "zdd<Up>"zP
 vnoremap <C-Down> "zdd"zp
 vnoremap < <gv
 vnoremap > >gv
-nnoremap < <<
-nnoremap > >>
 noremap + <C-a>
 noremap - <C-x>
 inoremap <C-Backspace> <ESC>ciw
@@ -202,7 +198,7 @@ endif
 let g:is_posix = 1
 
 function! GitInfo()
-    if g:IsPlugged('vim-fugitive')
+    if g:IsPlugged('vim-fugitive') && exists('*fugitive#head')
         let l:branch = fugitive#head()
         return (l:branch == '') ? '' : 'Git:'.l:branch.' '
     else
@@ -245,7 +241,7 @@ if g:IsPlugged('ctrlp.vim')
     endif
 endif
 
-if g:IsPlugged('vim-quickrun')
+if g:IsPlugged('vim-quickrun') && has('job')
     nnoremap <F9> :<C-u>QuickRun
     if g:IsPlugged('wandbox-vim')
         nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
@@ -309,6 +305,8 @@ if g:IsPlugged('onedark.vim')
     augroup OverrideOnedark
         autocmd!
         autocmd ColorScheme * hi Tabline cterm=Bold gui=Bold
+        autocmd ColorScheme * call onedark#set_highlight('EndOfBuffer', {
+                    \ 'fg': g:onedark#colors.black })
         autocmd ColorScheme * call onedark#set_highlight('Structure', {
                     \ 'fg': g:onedark#colors.purple })
         autocmd ColorScheme * call onedark#set_highlight('StorageClass', {
@@ -331,7 +329,7 @@ if !has('nvim')
         autocmd ColorScheme * hi NonText ctermbg=none
         autocmd ColorScheme * hi LineNr  ctermbg=none
         autocmd ColorScheme * hi Folded  ctermbg=none
-        autocmd ColorScheme * hi EndOfBuffer ctermbg=none
+        autocmd ColorScheme * hi EndOfBuffer ctermfg=235 ctermbg=none
         autocmd ColorScheme * hi StatusLineNC cterm=Italic gui=Italic
     augroup END
 end
@@ -343,8 +341,7 @@ endif
 
 let g:quickrun_config = get(g:, 'quickrun_config', {})
 let g:quickrun_config._ = {
-      \ 'runner': 'vimproc',
-      \ 'runner/vimproc/updatetime': 60,
+      \ 'runner': 'job',
       \ 'outputter': 'error',
       \ 'outputter/error/success': 'buffer',
       \ 'outputter/error/error': 'quickfix',
