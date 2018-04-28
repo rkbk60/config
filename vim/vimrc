@@ -50,7 +50,6 @@ if filereadable(s:vimplug)
     Plug 'tpope/vim-fugitive'
     Plug 'pseewald/vim-anyfold'
     Plug 'othree/eregex.vim'
-    Plug 'vim-scripts/vim-niji'
     Plug 'Yggdroot/indentLine'
     Plug 'mattn/emmet-vim', {'for': ['html', 'xml']}
     if has('nvim')
