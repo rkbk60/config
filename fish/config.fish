@@ -1,5 +1,7 @@
 set fish_greeting
 
+set VIRTUAL_ENV_DISABLE_PROMPT "t"
+
 # set base16 color
 if status --is-interactive
     test -f $HOME"/.config/base16-shell/scripts/base16-spacemacs.sh"
@@ -45,7 +47,7 @@ function __set_git_state_color
     git status --porcelain | grep -E . > /dev/null
         and set_color brred
         and return 0
-    git log (printf '%s/%s' (__current_git_remote_name) master)..HEAD  2> /dev/null | grep -E . > /dev/null
+    git log (printf '%s/%s' (__current_git_remote_name) (__current_git_branch_name))..HEAD  2> /dev/null | grep -E . > /dev/null
         and set_color bryellow
         or  set_color brgreen
 end
@@ -88,7 +90,7 @@ function __custom_prompt_pwd
         git log -n 1 > /dev/null 2>&1
         test $status -eq 0
             and test (__current_git_branch_name) != "master"
-            and echo -n :(__current_git_branch_name)
+            and echo -n \((__current_git_branch_name)\)
         set_color normal
         test (builtin pwd) = (git rev-parse --show-toplevel)
             or echo -n (set_color brblue)':'(basename (builtin pwd))

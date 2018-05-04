@@ -3,11 +3,11 @@ set encoding=utf8
 scriptencoding utf-8
 language C
 
-" define variables and functions
-" {{{
+" define variables and functions {{{
 let s:here = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 let s:base = substitute(s:here, 'vim', 'files', 'g')
 let s:app  = has('nvim') ? 'nvim' : 'vim'
+let s:appbase = s:base.'/'.s:app
 
 function! IsPlugged(name)
     return exists('g:plugs') && has_key(g:plugs, a:name) && isdirectory(g:plugs[a:name].dir)
@@ -21,13 +21,15 @@ function! GitInfo()
         return ''
     endif
 endfunction
+
+function! GuiRunning()
+    return has('gui_running') || exists('g:oni_gui')
+endfunction
 "}}}
 
-" install plugins
-" {{{
+" install vim-plug {{{
 let s:vimplug = s:base.'/vim/autoload/plug.vim'
 let s:plugins = s:base.'/'.s:app.'/plugged'
-let s:vimplug_url = 'https://raw.githubuercontent.com/junegunn/vim-plug/master/plug.vim'
 
 if empty(glob(s:vimplug))
     " Install vim-plug
@@ -46,13 +48,15 @@ if empty(glob(s:vimplug))
         exec 'set shell='.s:cmd
     endif
 endif
+" }}}
 
+" install plugins {{{
 if filereadable(s:vimplug)
     exec 'source '.s:vimplug
     call plug#begin(s:plugins)
     let g:vimproc#download_windows_dll = 1
     Plug 'Shougo/vimproc.vim', { 'do': 'make' }
-        \| Plug 'thinca/vim-quickrun'
+        \ | Plug 'thinca/vim-quickrun'
     Plug 'joshdick/onedark.vim'
     Plug 'sheerun/vim-polyglot'
     Plug 'ctrlpvim/ctrlp.vim'
@@ -70,14 +74,21 @@ if filereadable(s:vimplug)
     Plug 'pseewald/vim-anyfold'
     Plug 'othree/eregex.vim'
     Plug 'Yggdroot/indentLine'
-    Plug 'mattn/emmet-vim', { 'for': ['html', 'xml'] }
-    if has('nvim')
-        let g:python_host_prog = "/usr/bin/python2"
-        let g:python3_host_prog = "/usr/bin/python3"
+    Plug 'mattn/emmet-vim', { 'for': ['html', 'svg', 'xml'] }
+    if has('nvim') && has('unix')
+        " if !exists('$NVIM_RPLUGIN_MANIFEST')
+        "     let $NVIM_RPLUGIN_MANIFEST = s:appbase.'/'
+        " endif
+        function! s:systemCmdPath(cmd)
+            return system('type '.a:cmd.' 2> /dev/null | sed "s/'.a:cmd.' is //g"')
+        endfunction
+        let g:python_host_prog = s:systemCmdPath('python2')
+        let g:python3_host_prog = s:systemCmdPath('python3')
         Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
         Plug 'itchyny/lightline.vim'
         Plug 'taohex/lightline-buffer'
         Plug 'w0rp/ale'
+        Plug 'Chiel92/vim-autoformat'
         Plug 'maximbaz/lightline-ale'
         Plug 'zchee/deoplete-clang', { 'for': 'cpp' }
         Plug 'zchee/deoplete-go', { 'for': 'go' }
@@ -105,8 +116,7 @@ if filereadable(s:vimplug)
 endif
 "}}}
 
-" set options
-" {{{
+" set options {{{
 set lazyredraw
 set number
 set relativenumber
@@ -174,8 +184,7 @@ if executable('fish')
 endif
 "}}}
 
-" set keymaps
-" {{{
+" set keymaps {{{
 let g:mapleader="<Space>"
 noremap j gj
 noremap k gk
@@ -221,59 +230,19 @@ if has('nvim')
 endif
 "}}}
 
-" plugins settings
-" {{{
+" local settings {{{
+"}}}
+
+" plugins settings {{{
 let g:is_posix = 1
 
+" input helpers {{{
 if g:IsPlugged('vim-smartinput-endwise')
     call smartinput_endwise#define_default_rules()
 endif
 
 if g:IsPlugged('vim-easy-align')
     vmap <CR> <Plug>(EasyAlign)
-endif
-if g:IsPlugged('ctrlp.vim')
-    let g:ctrlp_map = '<C-p><C-p>'
-    nnoremap <C-p><C-f> :<C-u>CtrlPFiler<CR>
-    nnoremap <C-p><C-m> :<C-u>CtrlPMRU<CR>
-    nnoremap <C-p><C-q> :<C-u>CtrlPQuickfix<CR>
-    nnoremap <C-p><C-u> :<C-u>CtrlPUndo<CR>
-    nnoremap <C-p><C-y> :<C-u>CtrlPRegister<CR>
-    let g:ctrlp_lazy_update = 1
-    let g:ctrlp_types = ['buf', 'mru', 'quickfix', 'undo', 'fil', 'filer']
-    let g:ctrlp_open_muliple_files = 'ij'
-    let g:ctrlp_cache_dir = s:base.'/'.s:app.'/ctrlp_cache'
-    let g:ctrlp_custom_ignore = {
-                \ 'dir':  '\v[\/]\.(git|hg|svn)$',
-                \ 'file': '\v\.(exe|so|dll|png|jpeg|jpg|pdf)$'
-                \ }
-    if executable('rg')
-        set grepprg=rg\ --color=never
-        let g:ctrlp_clear_cache_on_exit = 1
-        let g:ctrlp_user_command = 'rg %s --files --color=never -g ""'
-        let g:ctrlp_use_caching = 0
-    elseif executable('ag')
-        set grepprg=ag\ --nocolor\ --nogroup
-        let g:ctrlp_clear_cache_on_exit = 1
-        let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup -g ""'
-    endif
-endif
-
-if g:IsPlugged('vim-quickrun')
-    nnoremap <F9> :<C-u>QuickRun
-    if g:IsPlugged('wandbox-vim')
-        nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
-    endif
-endif
-
-if g:IsPlugged('nim.vim')
-    fun! JumpToDef()
-        if exists("*GotoDefinition_" . &filetype)
-            call GotoDefinition_{&filetype}()
-        endif
-    endfun
-    noremap <M-g> :call JumpToDef()<CR>
-    inoremap <M-g> <Esc>:call JumpTodDef()<CR>wi
 endif
 
 if g:IsPlugged('vim-operator-surround')
@@ -307,14 +276,64 @@ let g:user_emmet_anchorizeurl_key      = '<C-e>a'
 let g:user_emmet_anchorizesummary_key  = '<C-e>A'
 let g:user_emmet_mergelines_key        = '<C-e>m'
 let g:user_emmet_codepretty_key        = '<C-e>c'
+"}}}
 
-" for split-term.vim
-let g:disable_key_mappings = 1
+" language support, appearance {{{
+let g:polyglot_disabled = ['markdown']
+
+if g:IsPlugged('nim.vim')
+    fun! JumpToDef()
+        if exists("*GotoDefinition_" . &filetype)
+            call GotoDefinition_{&filetype}()
+        endif
+    endfun
+    noremap <M-g> :call JumpToDef()<CR>
+    inoremap <M-g> <Esc>:call JumpTodDef()<CR>wi
+endif
 
 " for indentLine
 let g:indentLine_char = "|"
 let g:indentLine_fileTypeExclude = ['help']
-let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*'] 
+let g:indentLine_bufNameExeclude  = ['!.*', 'Terminal:.*'] 
+"}}}
+
+" utilities {{{
+if g:IsPlugged('ctrlp.vim')
+    let g:ctrlp_map = '<C-p><C-b>'
+    nnoremap <C-p><C-f> :<C-u>CtrlPFiler<CR>
+    nnoremap <C-p><C-m> :<C-u>CtrlPMRU<CR>
+    nnoremap <C-p><C-q> :<C-u>CtrlPQuickfix<CR>
+    nnoremap <C-p><C-u> :<C-u>CtrlPUndo<CR>
+    nnoremap <C-p><C-y> :<C-u>CtrlPRegister<CR>
+    let g:ctrlp_lazy_update = 1
+    let g:ctrlp_types = ['buf', 'mru', 'quickfix', 'undo', 'fil', 'filer']
+    let g:ctrlp_open_muliple_files = 'ij'
+    let g:ctrlp_cache_dir = s:base.'/'.s:app.'/ctrlp_cache'
+    let g:ctrlp_custom_ignore = {
+                \ 'dir':  '\v[\/]\.(git|hg|svn)$',
+                \ 'file': '\v\.(exe|so|dll|png|jpeg|jpg|pdf)$'
+                \ }
+    if executable('rg')
+        set grepprg=rg\ --color=never
+        let g:ctrlp_clear_cache_on_exit = 1
+        let g:ctrlp_user_command = 'rg %s --files --color=never -g ""'
+        let g:ctrlp_use_caching = 0
+    elseif executable('ag')
+        set grepprg=ag\ --nocolor\ --nogroup
+        let g:ctrlp_clear_cache_on_exit = 1
+        let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup -g ""'
+    endif
+endif
+
+" for split-term
+let g:disable_key_mappings = 1
+
+if g:IsPlugged('vim-quickrun')
+    nnoremap <F9> :<C-u>QuickRun
+    if g:IsPlugged('wandbox-vim')
+        nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
+    endif
+endif
 
 " for quickrun
 let g:quickrun_config = get(g:, 'quickrun_config', {})
@@ -328,11 +347,10 @@ let g:quickrun_config._ = {
       \ }
 "}}}
 
-" lightline setting
-"{{{
+" lightline setting {{{
 let g:lightline = {
       \   'active': {
-      \     'left': [ [ 'mode', 'paste' ], [ 'readonly', 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
+      \     'left': [ [ 'mode', 'paste' ], [ 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
       \     'right': [ [ 'lineinfo' ] ]
       \   },
       \   'inactive': {
@@ -405,8 +423,9 @@ let g:lightline = {
       \ }
 "}}}
 
-" colorscheme settings
-"{{{
+"}}}
+
+" colorscheme settings {{{
 if g:IsPlugged('onedark.vim')
     let g:onedark#colors = onedark#GetColors()
     let g:onedark#extend = { 'cterm': '234', 'gui': '#21252B' }
@@ -448,8 +467,7 @@ else
 endif
 "}}}
 
-" settings for some terminal emulator
-" {{{
+" settings for some terminal emulators {{{
 if !has('gui_running')
     if &term == 'xterm-256color'
         let &t_ti.="\e[0 q"
