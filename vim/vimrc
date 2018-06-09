@@ -9,22 +9,26 @@ let s:base = substitute(s:here, 'vim', 'files', 'g')
 let s:app  = has('nvim') ? 'nvim' : 'vim'
 let s:appbase = s:base.'/'.s:app
 
-function! IsPlugged(name)
+fun! IsPlugged(name)
     return exists('g:plugs') && has_key(g:plugs, a:name) && isdirectory(g:plugs[a:name].dir)
-endfunction
+endfun
 
-function! GitInfo()
+fun! GitInfo()
     if g:IsPlugged('vim-fugitive') && exists('*fugitive#head')
         let l:branch = fugitive#head()
         return (l:branch == '') ? '' : 'Git:'.l:branch.' '
     else
         return ''
     endif
-endfunction
+endfun
 
-function! GuiRunning()
+fun! GuiRunning()
     return has('gui_running') || exists('g:oni_gui')
-endfunction
+endfun
+
+fun! s:systemCmdPath(cmd)
+    return system('type '.a:cmd.' 2> /dev/null | sed "s/'.a:cmd.' is //g"')
+endfun
 "}}}
 
 " install vim-plug {{{
@@ -75,13 +79,12 @@ if filereadable(s:vimplug)
     Plug 'othree/eregex.vim'
     Plug 'Yggdroot/indentLine'
     Plug 'mattn/emmet-vim', { 'for': ['html', 'svg', 'xml'] }
+    Plug 'ryanoasis/vim-devicons'
+    Plug 'fuenor/im_control.vim'
     if has('nvim') && has('unix')
         " if !exists('$NVIM_RPLUGIN_MANIFEST')
         "     let $NVIM_RPLUGIN_MANIFEST = s:appbase.'/'
         " endif
-        function! s:systemCmdPath(cmd)
-            return system('type '.a:cmd.' 2> /dev/null | sed "s/'.a:cmd.' is //g"')
-        endfunction
         let g:python_host_prog = s:systemCmdPath('python2')
         let g:python3_host_prog = s:systemCmdPath('python3')
         Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
@@ -107,9 +110,9 @@ if filereadable(s:vimplug)
 
     " install plugins automatically on first run
     if empty(glob(s:plugins . '/?*'))
-        autocmd VimEnter *
-            \   let g:plug_window = 'enew' 
-            \ | PlugInstall --sync | bd 
+        au VimEnter *
+            \   let g:plug_window = 'enew'
+            \ | PlugInstall --sync | bd
             \ | source $MYVIMRC
             \ | let g:plug_window = 'vertical topleft new'
     endif
@@ -153,7 +156,7 @@ set showtabline=2
 set iminsert=0
 set imsearch=-1
 set titlestring=%M%{has('nvim')?'nvim':(has('gui_running')?'gvim':'vim')}%{strlen(@%)?'\ \ :\ '.expand('%:p:~'):''}
-set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{GitInfo()}%{&ff=='unix'?'':'CRLF.'}%{&fenc==#'utf-8'?'':&fenc.'.'}%{strlen(&ft)?&ft:'plain'}:%L\  
+set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
 if has('nvim')
     set noshowmode
 else
@@ -225,9 +228,7 @@ noremap x "_x
 noremap X "_X
 noremap s "_s
 noremap S "_S
-if has('nvim')
-    tnoremap <S-Space> <Space>
-endif
+tnoremap <S-Space> <Space>
 "}}}
 
 " local settings {{{
@@ -294,7 +295,7 @@ endif
 " for indentLine
 let g:indentLine_char = "|"
 let g:indentLine_fileTypeExclude = ['help']
-let g:indentLine_bufNameExeclude  = ['!.*', 'Terminal:.*'] 
+let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*'] 
 "}}}
 
 " utilities {{{
@@ -430,34 +431,34 @@ if g:IsPlugged('onedark.vim')
     let g:onedark#colors = onedark#GetColors()
     let g:onedark#extend = { 'cterm': '234', 'gui': '#21252B' }
     augroup OverrideOnedark
-        autocmd!
-        autocmd ColorScheme * hi Tabline cterm=Bold gui=Bold
-        autocmd ColorScheme * call onedark#set_highlight('EndOfBuffer', {
+        au!
+        au ColorScheme * hi Tabline cterm=Bold gui=Bold
+        au ColorScheme * call onedark#set_highlight('EndOfBuffer', {
                     \ 'fg': g:onedark#colors.black })
-        autocmd ColorScheme * call onedark#set_highlight('Structure', {
+        au ColorScheme * call onedark#set_highlight('Structure', {
                     \ 'fg': g:onedark#colors.purple })
-        autocmd ColorScheme * call onedark#set_highlight('StorageClass', {
+        au ColorScheme * call onedark#set_highlight('StorageClass', {
                     \ 'fg': g:onedark#colors.purple })
-        autocmd ColorScheme * call onedark#set_highlight('StatusLineNC', {
+        au ColorScheme * call onedark#set_highlight('StatusLineNC', {
                     \ 'fg': g:onedark#colors.comment_grey,
                     \ 'bg': g:onedark#colors.cursor_grey })
-        autocmd ColorScheme * call onedark#set_highlight('TablineSel', {
+        au ColorScheme * call onedark#set_highlight('TablineSel', {
                     \ 'bg': g:onedark#extend })
-        autocmd ColorScheme * call onedark#set_highlight('TablineFill', {
+        au ColorScheme * call onedark#set_highlight('TablineFill', {
                     \ 'bg': g:onedark#extend })
-        autocmd ColorScheme * call onedark#set_highlight('fishKeyword', {
+        au ColorScheme * call onedark#set_highlight('fishKeyword', {
                     \ 'fg': g:onedark#colors.purple })
     augroup END
 end
 if !has('nvim')
     augroup ModifyVimStyle
-        autocmd!
-        autocmd ColorScheme * hi Normal  ctermbg=none
-        autocmd ColorScheme * hi NonText ctermbg=none
-        autocmd ColorScheme * hi LineNr  ctermbg=none
-        autocmd ColorScheme * hi Folded  ctermbg=none
-        autocmd ColorScheme * hi EndOfBuffer ctermfg=235 ctermbg=none
-        autocmd ColorScheme * hi StatusLineNC cterm=Italic gui=Italic
+        au!
+        au ColorScheme * hi Normal  ctermbg=none
+        au ColorScheme * hi NonText ctermbg=none
+        au ColorScheme * hi LineNr  ctermbg=none
+        au ColorScheme * hi Folded  ctermbg=none
+        au ColorScheme * hi EndOfBuffer ctermfg=235 ctermbg=none
+        au ColorScheme * hi StatusLineNC cterm=Italic gui=Italic
     augroup END
 end
 if g:IsPlugged('onedark.vim')
