@@ -1,0 +1,10 @@
+remove lock = Caps_Lock
+
+keycode 66 = Control_L
+keycode 102 = Shift_L
+keycode 100 = Shift_R
+keycode 101 = Alt_R
+
+add shift = Shift_L Shift_R
+add control = Control_L
+add mod1 = Alt_R

@@ -22,6 +22,10 @@ fun! GitInfo()
     endif
 endfun
 
+fun! ImeInfo()
+    return ''
+endfun
+
 fun! GuiRunning()
     return has('gui_running') || exists('g:oni_gui')
 endfun
@@ -67,7 +71,7 @@ if filereadable(s:vimplug)
     Plug 'mattn/ctrlp-filer'
     Plug 'mattn/ctrlp-register'
     Plug 'kana/vim-smartinput'
-    Plug 'cohama/vim-smartinput-endwise'
+    Plug 'tpope/vim-endwise'
     Plug 'jiangmiao/auto-pairs'
     Plug 'junegunn/vim-easy-align'
     Plug 'kana/vim-operator-user'
@@ -75,16 +79,15 @@ if filereadable(s:vimplug)
     Plug 'tyru/caw.vim'
     Plug 'airblade/vim-gitgutter'
     Plug 'tpope/vim-fugitive'
-    Plug 'pseewald/vim-anyfold'
     Plug 'othree/eregex.vim'
     Plug 'Yggdroot/indentLine'
-    Plug 'mattn/emmet-vim', { 'for': ['html', 'svg', 'xml'] }
+    Plug 'mattn/emmet-vim', { 'for': ['html', 'markdown', 'svg', 'xml'] }
     Plug 'ryanoasis/vim-devicons'
+    Plug 'chrisbra/unicode.vim'
+    Plug 'tyru/eskk.vim'
     Plug 'fuenor/im_control.vim'
+    Plug 'simeji/winresizer'
     if has('nvim') && has('unix')
-        " if !exists('$NVIM_RPLUGIN_MANIFEST')
-        "     let $NVIM_RPLUGIN_MANIFEST = s:appbase.'/'
-        " endif
         let g:python_host_prog = s:systemCmdPath('python2')
         let g:python3_host_prog = s:systemCmdPath('python3')
         Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
@@ -101,6 +104,8 @@ if filereadable(s:vimplug)
         Plug 'JuliaEditorSupport/deoplete-julia', { 'for': 'julia' }
         Plug 'baabelfish/nvim-nim', { 'for': 'nim' }
         Plug 'zchee/deoplete-jedi', { 'for': 'python' }
+        Plug 'tyru/open-browser.vim', { 'for': ['markdown', 'adoc'] }
+            \ | Plug 'kannokanno/previm', { 'for': ['markdown', 'adoc']}
         Plug 'kassio/neoterm'
         Plug 'vimlab/split-term.vim'
     else
@@ -119,7 +124,7 @@ if filereadable(s:vimplug)
 endif
 "}}}
 
-" set options {{{
+" options {{{
 set lazyredraw
 set number
 set relativenumber
@@ -149,18 +154,19 @@ set listchars=tab:)\ ,trail:-,eol:\ ,extends:>,precedes:<,nbsp:-
 set splitright
 set splitbelow
 set hlsearch
-set foldmethod=marker
+set foldmethod=marker " set-foldtext will be defined by FoldTextCustom.
 set nf=""
+set modeline
 set laststatus=2
 set showtabline=2
 set iminsert=0
 set imsearch=-1
+set ambiwidth=double
 set titlestring=%M%{has('nvim')?'nvim':(has('gui_running')?'gvim':'vim')}%{strlen(@%)?'\ \ :\ '.expand('%:p:~'):''}
-set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
+set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{ImeInfo()}%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':'Enc:'.&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
 if has('nvim')
     set noshowmode
 else
-    set ambiwidth=double
     if exists('g:debug') && g:debug == 1
         set statusline=\ %M%n.%v.%l\ \ %{synIDattr(synID(line('.'),col('.'),1),'name')}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
     else
@@ -187,7 +193,7 @@ if executable('fish')
 endif
 "}}}
 
-" set keymaps {{{
+" keymaps {{{
 let g:mapleader="<Space>"
 noremap j gj
 noremap k gk
@@ -231,13 +237,216 @@ noremap S "_S
 tnoremap <S-Space> <Space>
 "}}}
 
-" local settings {{{
+" settings NOT related to plugins {{{
+let g:vim_indent_cont = &tabstop
+
+" regard 'md' as 'markdown'
+aug MdAsMarkdown
+    au!
+    au BufNewFile,BufRead *.{md,mdwn,mkd,mkdn,mark*} set ft=markdown
+aug END
+
+" apply vim-anyfold style foldtext method
+fun! FoldTextCustom()
+    let fs = v:foldstart
+    while getline(fs) !~ '\w'
+        let fs = nextnonblank(fs + 1)
+    endwhile
+    if fs > v:foldend
+        let line = getline(v:foldstart)
+    else
+        let line = substitute(getline(fs), '\t', repeat(' ', &tabstop), 'g')
+    endif
+    let line = substitute(line, '\v\{{3}(\d){0,1}', '{...}', 'g')
+
+    let w = winwidth(0) - &foldcolumn - &number * &numberwidth
+    let foldSize = 1 + v:foldend - v:foldstart
+    let foldSizeStr = " " . foldSize . " lines "
+    let foldLevelStr = repeat("==", v:foldlevel)
+    let lineCount = line("$")
+    let expansionString = repeat(" ", w - strwidth(foldSizeStr.line.foldLevelStr))
+    return line . expansionString . foldSizeStr . foldLevelStr
+endfun
+set foldtext=FoldTextCustom()
 "}}}
 
-" plugins settings {{{
+" settings related to plugins {{{
 let g:is_posix = 1
 
-" input helpers {{{
+"   input methods setting {{{
+let g:skk_dict_path = has('win32') ? $HOME."/skk/" : '/usr/share/skk/'
+let g:skk_dict = g:skk_dict_path.'SKK-JISYO.L'
+if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
+    set imdisable
+    nnoremap <silent> <C-\><C-\> :<C-u>call eskk#toggle()<CR>
+    let g:eskk#initial_mode = 'hira'
+    let g:eskk#large_dictionary = {
+        \ 'path': g:skk_dict,
+        \ 'sorted': 0,
+        \ 'encoding': 'euc-jp'
+        \}
+    let g:eskk#statusline_mode_strings = {'hira':'','kata':'','ascii':'','hankata':'','abbrev':''}
+    let g:eskk#marker_henkan = '>'
+    let g:eskk#marker_henkan_select = '>>'
+    let g:use_color_cursor = 1 " cursol_color is defined at COLOR-SCHEME block
+    let IM_CtrlMode = 0
+    fun! ImeInfo()
+        return printf(eskk#is_enabled() ? 'IME:eskk ' : '')
+    endfun
+    fun! EskkCustomMapping()
+        let th = eskk#table#new('rom_to_hira*', 'rom_to_hira') " {{{
+        call th.add_map('z!',   '●')
+        call th.add_map('z1',   '○')
+        call th.add_map('z"',   '▼')
+        call th.add_map('z2',   '▽')
+        call th.add_map('z#',   '▲')
+        call th.add_map('z3',   '△')
+        call th.add_map('z$',   '■')
+        call th.add_map('z4',   '□')
+        call th.add_map('z%',   '◆')
+        call th.add_map('z5',   '◇')
+        call th.add_map('z&',   '★')
+        call th.add_map('z6',   '☆')
+        call th.add_map("z'",   '♪')
+        call th.add_map('z7',   '◎')
+        call th.add_map('z(',   '【')
+        call th.add_map('z8',   '〔')
+        call th.add_map('z)',   '】')
+        call th.add_map('z9',   '〕')
+        call th.add_map('z0',   '∞')
+        call th.add_map('z=',   '≒')
+        call th.add_map('z-',   '〜')
+        call th.add_map('z~',   '≠')
+        call th.add_map('z^',   '※')
+        call th.add_map('z|',   '〒')
+        call th.add_map('z\\',  '￥')
+        call th.add_map('z`',   '〆')
+        call th.add_map('z@',   '〃')
+        call th.add_map('z+',   '±')
+        call th.add_map('z;',   '゛')
+        call th.add_map('z*',   '×')
+        call th.add_map('z,',   '゜')
+        call th.add_map('z<',   '＜')
+        call th.add_map('z>',   '＞')
+        call th.add_map('z?',   '÷')
+        call th.add_map('z/',   '・')
+        call th.add_map('z_',   '―')
+        call th.add_map('z ',   '　')
+        call th.add_map('zL',   '⇒')
+        call th.add_map('xca',  'ゕ')
+        call th.add_map('xce',  'ゖ')
+        call th.add_map('xva',  'ヷ')
+        call th.add_map('xvi',  'ヸ')
+        call th.add_map('xvu',  'ゔ')
+        call th.add_map('xve',  'ヹ')
+        call th.add_map('xvo',  'ヺ')
+        call th.add_map('xnga', 'か゚')
+        call th.add_map('xngi', 'き゚')
+        call th.add_map('xngu', 'く゚')
+        call th.add_map('xnge', 'け')
+        call th.add_map('xngo', 'こ゚')
+        call th.add_map('!',     '!')
+        call th.add_map('?',     '?')
+        call th.add_map('x!',   '！')
+        call th.add_map('x?',   '？')
+        call eskk#register_mode_table('hira', th)
+        " }}}
+        let tk = eskk#table#new('rom_to_kata*', 'rom_to_kata') " {{{
+        call tk.add_map('z!',   '●')
+        call tk.add_map('z1',   '○')
+        call tk.add_map('z"',   '▼')
+        call tk.add_map('z2',   '▽')
+        call tk.add_map('z#',   '▲')
+        call tk.add_map('z3',   '△')
+        call tk.add_map('z$',   '■')
+        call tk.add_map('z4',   '□')
+        call tk.add_map('z%',   '◆')
+        call tk.add_map('z5',   '◇')
+        call tk.add_map('z&',   '★')
+        call tk.add_map('z6',   '☆')
+        call tk.add_map("z'",   '♪')
+        call tk.add_map('z7',   '◎')
+        call tk.add_map('z(',   '【')
+        call tk.add_map('z8',   '〔')
+        call tk.add_map('z)',   '】')
+        call tk.add_map('z9',   '〕')
+        call tk.add_map('z0',   '∞')
+        call tk.add_map('z=',   '≒')
+        call tk.add_map('z-',   '〜')
+        call tk.add_map('z~',   '≠')
+        call tk.add_map('z^',   '※')
+        call tk.add_map('z|',   '〒')
+        call tk.add_map('z\\',  '￥')
+        call tk.add_map('z`',   '〆')
+        call tk.add_map('z@',   '〃')
+        call tk.add_map('z+',   '±')
+        call tk.add_map('z;',   '゛')
+        call tk.add_map('z*',   '×')
+        call tk.add_map('z,',   '゜')
+        call tk.add_map('z<',   '＜')
+        call tk.add_map('z>',   '＞')
+        call tk.add_map('z?',   '÷')
+        call tk.add_map('z/',   '・')
+        call tk.add_map('z_',   '―')
+        call tk.add_map('z ',   '　')
+        call tk.add_map('zL',   '⇒')
+        call tk.add_map('xca',  'ヵ')
+        call tk.add_map('xce',  'ヶ')
+        call tk.add_map('xva',  'ヷ')
+        call tk.add_map('xvi',  'ヸ')
+        call tk.add_map('xvu',  'ヴ')
+        call tk.add_map('xve',  'ヹ')
+        call tk.add_map('xvo',  'ヺ')
+        call tk.add_map('xnga', 'カ゚')
+        call tk.add_map('xngi', 'キ゚')
+        call tk.add_map('xngu', 'ク゚')
+        call tk.add_map('xnge', 'ケ゚')
+        call tk.add_map('xngo', 'コ゚')
+        call tk.add_map('!',     '!')
+        call tk.add_map('?',     '?')
+        call tk.add_map('x!',   '！')
+        call tk.add_map('x?',   '？')
+        call eskk#register_mode_table('kata', tk)
+        " }}}
+    endfun
+    aug EskkHooks
+        au!
+        au User eskk-initialize-pre call EskkCustomMapping()
+        au User eskk-enable-post    set showtabline=2
+        au User eskk-disable-post   set showtabline=2
+    aug END
+    " }}}
+elseif g:IsPlugged('im_control.vim') " {{{
+    if has('win32')
+        let IM_CtrlMode = 4
+        silent call IMState('FixMode')
+        inoremap <silent> <C-j> <C-^><C-r>=IMState('FixMode')<CR>
+    elseif has('unix')
+        let g:jp_input = trim(system('ibus list-engine 2>&1 | grep -os "mozc-jp" --color=never'))
+        if g:jp_input ==# 'mozc-jp'
+            silent system('ibus engine "mozc-jp"')
+            let IM_CtrlMode = 1
+            inoremap <silent> <C-j> <C-r>=IMState('FixMode')<CR>
+            fun! IMCtrl(cmd)
+                if a:cmd ==# 'On'
+                    let res = system('ibus engine "mozc-jp"')
+                elseif a:cmd ==# 'Off'
+                    let res = system('ibus engine "xkb:jp::jpn"')
+                endif
+                silent set showtabline=2
+                return ''
+            endfun
+            fun! ImeInfo()
+                let l:current_jp_input = trim(system('ibus engine 2>&1 | grep -os "mozc-jp" --color=never'))
+                return printf('IME:mozc%s ', IMStatus('(Lock)'))
+            endfun
+        endif
+    endif
+    "}}}
+endif
+"   }}}
+
+"   input helpers {{{
 if g:IsPlugged('vim-smartinput-endwise')
     call smartinput_endwise#define_default_rules()
 endif
@@ -279,7 +488,7 @@ let g:user_emmet_mergelines_key        = '<C-e>m'
 let g:user_emmet_codepretty_key        = '<C-e>c'
 "}}}
 
-" language support, appearance {{{
+"   language support, appearance {{{
 let g:polyglot_disabled = ['markdown']
 
 if g:IsPlugged('nim.vim')
@@ -298,7 +507,7 @@ let g:indentLine_fileTypeExclude = ['help']
 let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*'] 
 "}}}
 
-" utilities {{{
+"   utilities {{{
 if g:IsPlugged('ctrlp.vim')
     let g:ctrlp_map = '<C-p><C-b>'
     nnoremap <C-p><C-f> :<C-u>CtrlPFiler<CR>
@@ -326,6 +535,10 @@ if g:IsPlugged('ctrlp.vim')
     endif
 endif
 
+" for open-browser(previm)
+let g:netrw_nogx = 1
+let g:previm_enable_realtime = 1
+
 " for split-term
 let g:disable_key_mappings = 1
 
@@ -348,7 +561,7 @@ let g:quickrun_config._ = {
       \ }
 "}}}
 
-" lightline setting {{{
+"   lightline setting {{{
 let g:lightline = {
       \   'active': {
       \     'left': [ [ 'mode', 'paste' ], [ 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
@@ -429,8 +642,8 @@ let g:lightline = {
 " colorscheme settings {{{
 if g:IsPlugged('onedark.vim')
     let g:onedark#colors = onedark#GetColors()
-    let g:onedark#extend = { 'cterm': '234', 'gui': '#21252B' }
-    augroup OverrideOnedark
+    let g:onedark#extend = { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
+    aug OverrideOnedark
         au!
         au ColorScheme * hi Tabline cterm=Bold gui=Bold
         au ColorScheme * call onedark#set_highlight('EndOfBuffer', {
@@ -446,12 +659,24 @@ if g:IsPlugged('onedark.vim')
                     \ 'bg': g:onedark#extend })
         au ColorScheme * call onedark#set_highlight('TablineFill', {
                     \ 'bg': g:onedark#extend })
+        au ColorScheme * call onedark#set_highlight('Cursor', {
+                    \ 'bg': g:onedark#colors.blue })
         au ColorScheme * call onedark#set_highlight('fishKeyword', {
                     \ 'fg': g:onedark#colors.purple })
-    augroup END
+    aug END
+
+    if IsPlugged('eskk.vim')
+        let g:eskk#cursor_color = {
+            \ 'ascii':  [ g:onedark#colors.yellow['gui'], g:onedark#colors.yellow['gui'] ],
+            \ 'hira':   [ g:onedark#colors.red['gui'],    g:onedark#colors.red['gui']    ],
+            \ 'kata':   [ g:onedark#colors.green['gui'],  g:onedark#colors.green['gui']  ],
+            \ 'abbrev': g:onedark#colors.purple['gui'],
+            \ 'zenei':  g:onedark#colors.yellow['gui']
+            \}
+    endif
 end
 if !has('nvim')
-    augroup ModifyVimStyle
+    aug ModifyVimStyle
         au!
         au ColorScheme * hi Normal  ctermbg=none
         au ColorScheme * hi NonText ctermbg=none
@@ -459,7 +684,7 @@ if !has('nvim')
         au ColorScheme * hi Folded  ctermbg=none
         au ColorScheme * hi EndOfBuffer ctermfg=235 ctermbg=none
         au ColorScheme * hi StatusLineNC cterm=Italic gui=Italic
-    augroup END
+    aug END
 end
 if g:IsPlugged('onedark.vim')
     color onedark
@@ -475,6 +700,8 @@ if !has('gui_running')
         let &t_SI.="\e[5 q"
         let &t_EI.="\e[1 q"
         let &t_te.="\e[0 q"
+    elseif &term == 'linux'
+        let &t_Co=16
     elseif isdirectory('/data/data/com.termux')
         let &t_ti.="\e[1 q"
         let &t_SI.="\e[5 q"
@@ -491,4 +718,3 @@ if !has('gui_running')
     endif
 endif
 "}}}
-
