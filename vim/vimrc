@@ -168,7 +168,7 @@ if has('nvim')
     set noshowmode
 else
     if exists('g:debug') && g:debug == 1
-        set statusline=\ %M%n.%v.%l\ \ %{synIDattr(synID(line('.'),col('.'),1),'name')}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
+        set statusline=\ %M%n.%v.%l\ %{printf('')}\ %{'color:'.synIDattr(synID(line('.'),col('.'),1),'name')}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
     else
         set statusline=\ %M%n.%v.%l%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
     endif
@@ -276,9 +276,9 @@ let g:is_posix = 1
 "   input methods setting {{{
 let g:skk_dict_path = has('win32') ? $HOME."/skk/" : '/usr/share/skk/'
 let g:skk_dict = g:skk_dict_path.'SKK-JISYO.L'
+
 if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
-    set imdisable
-    nnoremap <silent> <C-\><C-\> :<C-u>call eskk#toggle()<CR>
+    nnoremap <silent> <C-\><C-\> :<C-u>call EskkIntelijentToggle()<CR>
     let g:eskk#initial_mode = 'hira'
     let g:eskk#large_dictionary = {
         \ 'path': g:skk_dict,
@@ -291,10 +291,19 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
     let g:use_color_cursor = 1 " cursol_color is defined at COLOR-SCHEME block
     let IM_CtrlMode = 0
     fun! ImeInfo()
-        return printf(eskk#is_enabled() ? 'IME:eskk ' : '')
+        if !exists('g:next_ime_mode')
+            return ''
+        elseif g:next_ime_mode == 1
+            return 'eskk '
+        elseif g:next_ime_mode == 2
+            return 'eskk(Lock) '
+        endif
+        return ''
     endfun
     fun! EskkCustomMapping()
         let th = eskk#table#new('rom_to_hira*', 'rom_to_hira') " {{{
+        call th.add_map(';',    'ー')
+        call th.add_map(':',    'っ')
         call th.add_map('z!',   '●')
         call th.add_map('z1',   '○')
         call th.add_map('z"',   '▼')
@@ -347,11 +356,13 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         call th.add_map('xngo', 'こ゚')
         call th.add_map('!',     '!')
         call th.add_map('?',     '?')
-        call th.add_map('x!',   '！')
-        call th.add_map('x?',   '？')
+        call th.add_map('j!',   '！')
+        call th.add_map('j?',   '？')
         call eskk#register_mode_table('hira', th)
         " }}}
         let tk = eskk#table#new('rom_to_kata*', 'rom_to_kata') " {{{
+        call th.add_map(';',    'ー')
+        call th.add_map(':',    'ッ')
         call tk.add_map('z!',   '●')
         call tk.add_map('z1',   '○')
         call tk.add_map('z"',   '▼')
@@ -404,16 +415,33 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         call tk.add_map('xngo', 'コ゚')
         call tk.add_map('!',     '!')
         call tk.add_map('?',     '?')
-        call tk.add_map('x!',   '！')
-        call tk.add_map('x?',   '？')
+        call tk.add_map('j!',   '！')
+        call tk.add_map('j?',   '？')
         call eskk#register_mode_table('kata', tk)
         " }}}
+    endfun
+    fun! EskkIntelijentToggle()
+        let g:next_ime_mode = exists('g:next_ime_mode')
+            \ ? (g:next_ime_mode + 1) % 3
+            \ : 0
+        if g:next_ime_mode == 0
+            call eskk#disable()
+            set showtabline=2
+        else
+            call eskk#enable()
+            set showtabline=2
+        endif
+    endfun
+    fun! FixEskkStatus()
+        if exists('g:next_ime_mode') && g:next_ime_mode == 2
+            call eskk#enable()
+            set showtabline=2
+        endif
     endfun
     aug EskkHooks
         au!
         au User eskk-initialize-pre call EskkCustomMapping()
-        au User eskk-enable-post    set showtabline=2
-        au User eskk-disable-post   set showtabline=2
+        au User eskk-disable-post   call FixEskkStatus()
     aug END
     " }}}
 elseif g:IsPlugged('im_control.vim') " {{{
@@ -438,7 +466,7 @@ elseif g:IsPlugged('im_control.vim') " {{{
             endfun
             fun! ImeInfo()
                 let l:current_jp_input = trim(system('ibus engine 2>&1 | grep -os "mozc-jp" --color=never'))
-                return printf('IME:mozc%s ', IMStatus('(Lock)'))
+                return printf('mozc%s ', IMStatus('(Lock)'))
             endfun
         endif
     endif
