@@ -435,8 +435,10 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
     fun! FixEskkStatus()
         if exists('g:next_ime_mode') && g:next_ime_mode == 2
             call eskk#enable()
-            set showtabline=2
+        else
+            let g:next_ime_mode = eskk#is_enabled() ? 1 : 0
         endif
+        set showtabline=2
     endfun
     aug EskkHooks
         au!
