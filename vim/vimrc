@@ -3,39 +3,18 @@ set encoding=utf8
 scriptencoding utf-8
 language C
 
-" define variables and functions {{{
+" define variables and functions {{{1
 let s:here = fnamemodify(resolve(expand('<sfile>:p')), ':h')
-let s:base = substitute(s:here, 'vim', 'files', 'g')
+let s:base = substitute(s:here, 'vim', '.data', 'g')
 let s:app  = has('nvim') ? 'nvim' : 'vim'
 let s:appbase = s:base.'/'.s:app
 
 fun! IsPlugged(name)
     return exists('g:plugs') && has_key(g:plugs, a:name) && isdirectory(g:plugs[a:name].dir)
 endfun
+"}}}1
 
-fun! GitInfo()
-    if g:IsPlugged('vim-fugitive') && exists('*fugitive#head')
-        let l:branch = fugitive#head()
-        return (l:branch == '') ? '' : 'Git:'.l:branch.' '
-    else
-        return ''
-    endif
-endfun
-
-fun! ImeInfo()
-    return ''
-endfun
-
-fun! GuiRunning()
-    return has('gui_running') || exists('g:oni_gui')
-endfun
-
-fun! s:systemCmdPath(cmd)
-    return system('type '.a:cmd.' 2> /dev/null | sed "s/'.a:cmd.' is //g"')
-endfun
-"}}}
-
-" install vim-plug {{{
+" install vim-plug {{{1
 let s:vimplug = s:base.'/vim/autoload/plug.vim'
 let s:plugins = s:base.'/'.s:app.'/plugged'
 
@@ -50,15 +29,15 @@ if empty(glob(s:vimplug))
         let s:cmd = &shell
         set shell=powershell
         exec 'silent !(New-Object Net.WebClient).DownloadFile("'.s:vimplug_url
-                    \.'", $ExcutionContext.SessionState.Path.GetUnresolvedProviderPathFromPath("'
-                    \.s:vimplug_win
-                    \.'"))'
+            \.'", $ExcutionContext.SessionState.Path.GetUnresolvedProviderPathFromPath("'
+            \.s:vimplug_win
+            \.'"))'
         exec 'set shell='.s:cmd
     endif
 endif
-" }}}
+" }}}1
 
-" install plugins {{{
+" install plugins {{{1
 if filereadable(s:vimplug)
     exec 'source '.s:vimplug
     call plug#begin(s:plugins)
@@ -67,49 +46,56 @@ if filereadable(s:vimplug)
         \ | Plug 'thinca/vim-quickrun'
     Plug 'joshdick/onedark.vim'
     Plug 'sheerun/vim-polyglot'
-    Plug 'ctrlpvim/ctrlp.vim'
-    Plug 'mattn/ctrlp-filer'
-    Plug 'mattn/ctrlp-register'
     Plug 'kana/vim-smartinput'
     Plug 'tpope/vim-endwise'
     Plug 'jiangmiao/auto-pairs'
     Plug 'junegunn/vim-easy-align'
     Plug 'kana/vim-operator-user'
     Plug 'rhysd/vim-operator-surround'
-    Plug 'tyru/caw.vim'
+    Plug 'tomtom/tcomment_vim'
+    Plug 'osyo-manga/vim-over'
     Plug 'airblade/vim-gitgutter'
     Plug 'tpope/vim-fugitive'
-    Plug 'othree/eregex.vim'
     Plug 'Yggdroot/indentLine'
-    Plug 'mattn/emmet-vim', { 'for': ['html', 'markdown', 'svg', 'xml'] }
-    Plug 'ryanoasis/vim-devicons'
-    Plug 'chrisbra/unicode.vim'
+    Plug 'mattn/emmet-vim', { 'for': ['css', 'html', 'markdown', 'svg', 'xml'] }
     Plug 'tyru/eskk.vim'
     Plug 'fuenor/im_control.vim'
     Plug 'simeji/winresizer'
     if has('nvim') && has('unix')
-        let g:python_host_prog = s:systemCmdPath('python2')
-        let g:python3_host_prog = s:systemCmdPath('python3')
+        let g:python_host_prog  = "/usr/bin/python2"
+        let g:python3_host_prog = "/usr/bin/python3"
+        Plug 'Shougo/denite.nvim', { 'do': ':UpdateRemotePlugins' }
+        Plug 'chemzqm/denite-extra'
         Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
         Plug 'itchyny/lightline.vim'
-        Plug 'taohex/lightline-buffer'
         Plug 'w0rp/ale'
         Plug 'Chiel92/vim-autoformat'
         Plug 'maximbaz/lightline-ale'
-        Plug 'zchee/deoplete-clang', { 'for': 'cpp' }
-        Plug 'zchee/deoplete-go', { 'for': 'go' }
-        Plug 'fatih/vim-go', { 'for': 'go' }
-        Plug 'eagletmt/neco-ghc', { 'for': 'haskell' }
-        Plug 'nbouscal/vim-stylish-haskell', { 'for': 'haskell' }
+        Plug 'zchee/deoplete-clang',              { 'for': 'cpp' }
+        Plug 'dag/vim-fish',                      { 'for': 'fish' }
+        Plug 'ponko2/deoplete-fish',              { 'for': 'fish' }
+        Plug 'fatih/vim-go',                      { 'for': 'go', 'do': ':GoInstallBinaries' }
+        Plug 'zchee/deoplete-go',                 { 'for': 'go' }
+        Plug 'eagletmt/neco-ghc',                 { 'for': 'haskell' }
+        Plug 'nbouscal/vim-stylish-haskell',      { 'for': 'haskell' }
         Plug 'JuliaEditorSupport/deoplete-julia', { 'for': 'julia' }
-        Plug 'baabelfish/nvim-nim', { 'for': 'nim' }
-        Plug 'zchee/deoplete-jedi', { 'for': 'python' }
-        Plug 'tyru/open-browser.vim', { 'for': ['markdown', 'adoc'] }
-            \ | Plug 'kannokanno/previm', { 'for': ['markdown', 'adoc']}
+        Plug 'baabelfish/nvim-nim',               { 'for': 'nim' }
+        Plug 'zchee/deoplete-jedi',               { 'for': 'python' }
+        Plug 'Shougo/neco-vim',                   { 'for': 'vim' }
+        Plug 'Shougo/neco-syntax'
+        Plug 'ujihisa/neco-look'
+        Plug 'tyru/open-browser.vim', { 'for': ['markdown', 'adoc'], 'on': 'PrevimOpen' }
+        Plug 'kannokanno/previm',     { 'for': ['markdown', 'adoc'], 'on': 'PrevimOpen' }
         Plug 'kassio/neoterm'
         Plug 'vimlab/split-term.vim'
     else
+        Plug 'ctrlpvim/ctrlp.vim'
+        Plug 'mattn/ctrlp-filer'
+        Plug 'mattn/ctrlp-register'
         Plug 'rhysd/wandbox-vim'
+    endif
+    if !has('nvim')
+        Plug 'thinca/vim-fontzoom'
     endif
     call plug#end()
 
@@ -122,9 +108,9 @@ if filereadable(s:vimplug)
             \ | let g:plug_window = 'vertical topleft new'
     endif
 endif
-"}}}
+"}}}1
 
-" options {{{
+" options {{{1
 set lazyredraw
 set number
 set relativenumber
@@ -146,7 +132,8 @@ set display=lastline
 set pumheight=10
 set mouse=a
 set wildmenu
-set wildignorecase
+set ignorecase
+set smartcase
 set clipboard=unnamedplus
 set history=100
 set list
@@ -156,6 +143,8 @@ set splitbelow
 set hlsearch
 set foldmethod=marker " set-foldtext will be defined by FoldTextCustom.
 set nf=""
+set autowrite
+set nocompatible
 set modeline
 set laststatus=2
 set showtabline=2
@@ -163,7 +152,6 @@ set iminsert=0
 set imsearch=-1
 set ambiwidth=double
 set titlestring=%M%{has('nvim')?'nvim':(has('gui_running')?'gvim':'vim')}%{strlen(@%)?'\ \ :\ '.expand('%:p:~'):''}
-set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{ImeInfo()}%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':'Enc:'.&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
 if has('nvim')
     set noshowmode
 else
@@ -185,15 +173,16 @@ set backup
 set undofile
 exec 'set backupdir='.s:tmpdir.'/backup'
 exec 'set directory='.s:tmpdir.'/swap'
-exec 'set undodir='.s:tmpdir.'/undo'
+exec 'set undodir='  .s:tmpdir.'/undo'
 exec 'set viminfo+=n'.s:tmpdir.'/viminfo.txt'
 
 if executable('fish')
     set shell=fish
+    set shellpipe=|
 endif
-"}}}
+"}}}1
 
-" keymaps {{{
+" keymaps {{{1
 let g:mapleader="<Space>"
 noremap j gj
 noremap k gk
@@ -235,18 +224,37 @@ noremap X "_X
 noremap s "_s
 noremap S "_S
 tnoremap <S-Space> <Space>
-"}}}
+tnoremap <C-@><C-w> <C-\><C-n><C-w>
+"}}}1
 
-" settings NOT related to plugins {{{
+" settings NOT related to plugins {{{1
 let g:vim_indent_cont = &tabstop
 
-" regard 'md' as 'markdown'
+" set custom tabline {{{2
+fun! GitInfo()
+    if g:IsPlugged('vim-fugitive') && exists('*fugitive#head')
+        let l:branch = fugitive#head()
+        return (l:branch == '') ? '' : 'Git:'.l:branch.' '
+    else
+        return ''
+    endif
+endfun
+
+fun! ImeInfo()
+    return ''
+endfun
+
+set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{ImeInfo()}%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':'Enc:'.&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
+"}}}2
+
+" regard 'md' as 'markdown' {{{2
 aug MdAsMarkdown
     au!
     au BufNewFile,BufRead *.{md,mdwn,mkd,mkdn,mark*} set ft=markdown
 aug END
+"}}}2
 
-" apply vim-anyfold style foldtext method
+" apply vim-anyfold style foldtext method {{{2
 fun! FoldTextCustom()
     let fs = v:foldstart
     while getline(fs) !~ '\w'
@@ -257,7 +265,8 @@ fun! FoldTextCustom()
     else
         let line = substitute(getline(fs), '\t', repeat(' ', &tabstop), 'g')
     endif
-    let line = substitute(line, '\v\{{3}(\d){0,1}', '{...}', 'g')
+    let line = substitute(line, '\v\{{3}(\d{1,})', '{\1}', 'g')
+    let line = substitute(line, '\v\{{3}', '{...}', 'g')
 
     let w = winwidth(0) - &foldcolumn - &number * &numberwidth
     let foldSize = 1 + v:foldend - v:foldstart
@@ -268,16 +277,18 @@ fun! FoldTextCustom()
     return line . expansionString . foldSizeStr . foldLevelStr
 endfun
 set foldtext=FoldTextCustom()
-"}}}
+"}}}2
+"}}}1
 
-" settings related to plugins {{{
+" settings related to plugins {{{1
 let g:is_posix = 1
 
-"   input methods setting {{{
+" IMEs {{{2
 let g:skk_dict_path = has('win32') ? $HOME."/skk/" : '/usr/share/skk/'
 let g:skk_dict = g:skk_dict_path.'SKK-JISYO.L'
-
-if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
+if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict)
+    " eskk settings {{{3
+    set imdisable
     nnoremap <silent> <C-\><C-\> :<C-u>call EskkIntelijentToggle()<CR>
     let g:eskk#initial_mode = 'hira'
     let g:eskk#large_dictionary = {
@@ -290,6 +301,9 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
     let g:eskk#marker_henkan_select = '>>'
     let g:use_color_cursor = 1 " cursol_color is defined at COLOR-SCHEME block
     let IM_CtrlMode = 0
+    if has('unix')
+        silent call system('ibus engine "xkb:jp::jpn" >/dev/null 2>&1')
+    endif
     fun! ImeInfo()
         if !exists('g:next_ime_mode')
             return ''
@@ -301,7 +315,7 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         return ''
     endfun
     fun! EskkCustomMapping()
-        let th = eskk#table#new('rom_to_hira*', 'rom_to_hira') " {{{
+        let th = eskk#table#new('rom_to_hira*', 'rom_to_hira') " {{{4
         call th.add_map(';',    'ー')
         call th.add_map(':',    'っ')
         call th.add_map('z!',   '●')
@@ -354,13 +368,13 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         call th.add_map('xngu', 'く゚')
         call th.add_map('xnge', 'け')
         call th.add_map('xngo', 'こ゚')
-        call th.add_map('!',     '!')
-        call th.add_map('?',     '?')
+        call th.add_map('!',    '!')
+        call th.add_map('?',    '?')
         call th.add_map('j!',   '！')
         call th.add_map('j?',   '？')
         call eskk#register_mode_table('hira', th)
-        " }}}
-        let tk = eskk#table#new('rom_to_kata*', 'rom_to_kata') " {{{
+        " }}}4
+        let tk = eskk#table#new('rom_to_kata*', 'rom_to_kata') " {{{4
         call th.add_map(';',    'ー')
         call th.add_map(':',    'ッ')
         call tk.add_map('z!',   '●')
@@ -413,17 +427,15 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         call tk.add_map('xngu', 'ク゚')
         call tk.add_map('xnge', 'ケ゚')
         call tk.add_map('xngo', 'コ゚')
-        call tk.add_map('!',     '!')
-        call tk.add_map('?',     '?')
+        call tk.add_map('!',    '!')
+        call tk.add_map('?',    '?')
         call tk.add_map('j!',   '！')
         call tk.add_map('j?',   '？')
         call eskk#register_mode_table('kata', tk)
-        " }}}
+        " }}}4
     endfun
     fun! EskkIntelijentToggle()
-        let g:next_ime_mode = exists('g:next_ime_mode')
-            \ ? (g:next_ime_mode + 1) % 3
-            \ : 0
+        let g:next_ime_mode = exists('g:next_ime_mode') ? (g:next_ime_mode + 1) % 3 : 1
         if g:next_ime_mode == 0
             call eskk#disable()
             set showtabline=2
@@ -445,15 +457,16 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict) " {{{
         au User eskk-initialize-pre call EskkCustomMapping()
         au User eskk-disable-post   call FixEskkStatus()
     aug END
-    " }}}
-elseif g:IsPlugged('im_control.vim') " {{{
+    " }}}3
+elseif g:IsPlugged('im_control.vim')
+    " im_control settings {{{3
     if has('win32')
         let IM_CtrlMode = 4
         silent call IMState('FixMode')
         inoremap <silent> <C-j> <C-^><C-r>=IMState('FixMode')<CR>
     elseif has('unix')
-        let g:jp_input = trim(system('ibus list-engine 2>&1 | grep -os "mozc-jp" --color=never'))
-        if g:jp_input ==# 'mozc-jp'
+        let s:has_mozc = system('ibus list-engine 2>&1 | grep -c "mozc-jp"')
+        if s:has_mozc ==# '1'
             silent system('ibus engine "mozc-jp"')
             let IM_CtrlMode = 1
             inoremap <silent> <C-j> <C-r>=IMState('FixMode')<CR>
@@ -467,16 +480,15 @@ elseif g:IsPlugged('im_control.vim') " {{{
                 return ''
             endfun
             fun! ImeInfo()
-                let l:current_jp_input = trim(system('ibus engine 2>&1 | grep -os "mozc-jp" --color=never'))
                 return printf('mozc%s ', IMStatus('(Lock)'))
             endfun
         endif
     endif
-    "}}}
+    "}}}3
 endif
-"   }}}
+"}}}2
 
-"   input helpers {{{
+" input helpers {{{2
 if g:IsPlugged('vim-smartinput-endwise')
     call smartinput_endwise#define_default_rules()
 endif
@@ -486,18 +498,24 @@ if g:IsPlugged('vim-easy-align')
 endif
 
 if g:IsPlugged('vim-operator-surround')
-    nmap <Space>y <Plug>(operator-surround-append)
-    nmap <Space>d <Plug>(operator-surround-delete)
-    nmap <Space>r <Plug>(operator-surround-replace)
+    nmap ey <Plug>(operator-surround-append)
+    nmap ed <Plug>(operator-surround-delete)
+    nmap er <Plug>(operator-surround-replace)
 endif
 
 if g:IsPlugged('deoplete.vim')
-    let g:deoplete#enable_at_startup = 1
+    call deoplete#enable()
     let g:deoplete#auto_complete_delay = 0
     let g:deoplete#auto_complete_start_length = 1
     let g:deoplete#max_list = 10000
     let g:deoplete#omni_patterns = {}
     set completeopt-=preview
+    if g:IsPlugged('neco-vim')
+        let g:necovim#complete_functions.Ref = 'ref#complete'
+    endif
+    if g:IsPlugged('deoplete-jedi')
+        let g:deoplete#sources#jedi#python_path = g:python3_host_prog
+    endif
 endif
 
 " for emmet.vim
@@ -516,9 +534,13 @@ let g:user_emmet_anchorizeurl_key      = '<C-e>a'
 let g:user_emmet_anchorizesummary_key  = '<C-e>A'
 let g:user_emmet_mergelines_key        = '<C-e>m'
 let g:user_emmet_codepretty_key        = '<C-e>c'
-"}}}
+"}}}2
 
-"   language support, appearance {{{
+" language support, appearance {{{2
+" for tcomment_vim
+let g:tcomment_mapleader1 = '<C-/>'
+let g:tcomment_mapleader2 = '<C-/>'
+
 let g:polyglot_disabled = ['markdown']
 
 if g:IsPlugged('nim.vim')
@@ -532,21 +554,147 @@ if g:IsPlugged('nim.vim')
 endif
 
 " for indentLine
-let g:indentLine_char = "|"
+let g:indentLine_char = '|'
 let g:indentLine_fileTypeExclude = ['help']
-let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*'] 
-"}}}
+let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*']
+"}}}2
 
-"   utilities {{{
-if g:IsPlugged('ctrlp.vim')
-    let g:ctrlp_map = '<C-p><C-b>'
-    nnoremap <C-p><C-f> :<C-u>CtrlPFiler<CR>
-    nnoremap <C-p><C-m> :<C-u>CtrlPMRU<CR>
-    nnoremap <C-p><C-q> :<C-u>CtrlPQuickfix<CR>
-    nnoremap <C-p><C-u> :<C-u>CtrlPUndo<CR>
-    nnoremap <C-p><C-y> :<C-u>CtrlPRegister<CR>
-    let g:ctrlp_lazy_update = 1
-    let g:ctrlp_types = ['buf', 'mru', 'quickfix', 'undo', 'fil', 'filer']
+" utilities {{{2
+if g:IsPlugged('denite.nvim')
+    " denite settings {{{3
+    " - Change file/rec command {{{4
+    call denite#custom#var('file/rec', 'command',
+        \ ['ag', '--follow', '--nocolor', '--nogroup', '-g', ''])
+    " For ripgrep
+    " Note: It is slower than ag
+    call denite#custom#var('file/rec', 'command',
+        \ ['rg', '--files', '--glob', '!.git'])
+    " For Pt(the platinum searcher)
+    " NOTE: It also supports windows.
+    call denite#custom#var('file/rec', 'command',
+        \ ['pt', '--follow', '--nocolor', '--nogroup',
+        \  (has('win32') ? '-g:' : '-g='), ''])
+    " For python script scantree.py (works if python 3.5+ in path)
+    " Read bellow on this file to learn more about scantree.py
+    call denite#custom#var('file/rec', 'command', ['scantree.py'])
+    "}}}4
+
+    " - Change mappings {{{4
+    call denite#custom#map(
+        \ 'insert',
+        \ '<C-j>',
+        \ '<denite:move_to_next_line>',
+        \ 'noremap'
+        \)
+    call denite#custom#map(
+        \ 'insert',
+        \ '<C-k>',
+        \ '<denite:move_to_previous_line>',
+        \ 'noremap'
+        \)
+    "}}}4
+
+    " - Change matchers {{{4
+    call denite#custom#source(
+        \ 'file_mru', 'matchers', ['matcher/fuzzy', 'matcher/project_files'])
+    call denite#custom#source(
+        \ 'file/rec', 'matchers', ['matcher/cpsm'])
+
+    " Change sorters.
+    call denite#custom#source(
+        \ 'file/rec', 'sorters', ['sorter/sublime'])
+    "}}}4
+
+    " - Add custom menus {{{4
+    let s:menus = {}
+
+    let s:menus.fish = {
+        \ 'description': 'Edit your import fish configuration'
+        \ }
+    let s:menus.fish.file_candidates = [
+        \ ['config', '~/.config/fish/config.fish']
+        \ ]
+
+    call denite#custom#var('menu', 'menus', s:menus)
+    "}}}4
+
+    " - Add alt-grep commands on grep source {{{4
+    call denite#custom#var('grep', 'command', ['ag'])
+    call denite#custom#var('grep', 'default_opts',
+        \ ['-i', '--vimgrep'])
+    call denite#custom#var('grep', 'recursive_opts', [])
+    call denite#custom#var('grep', 'pattern_opt', [])
+    call denite#custom#var('grep', 'separator', ['--'])
+    call denite#custom#var('grep', 'final_opts', [])
+
+    call denite#custom#var('grep', 'command', ['ack'])
+    call denite#custom#var('grep', 'default_opts',
+        \ ['--ackrc', $HOME.'/.ackrc', '-H',
+        \  '--nopager', '--nocolor', '--nogroup', '--column'])
+    call denite#custom#var('grep', 'recursive_opts', [])
+    call denite#custom#var('grep', 'pattern_opt', ['--match'])
+    call denite#custom#var('grep', 'separator', ['--'])
+    call denite#custom#var('grep', 'final_opts', [])
+
+    call denite#custom#var('grep', 'command', ['rg'])
+    call denite#custom#var('grep', 'default_opts',
+        \ ['--vimgrep', '--no-heading'])
+    call denite#custom#var('grep', 'recursive_opts', [])
+    call denite#custom#var('grep', 'pattern_opt', ['--regexp'])
+    call denite#custom#var('grep', 'separator', ['--'])
+    call denite#custom#var('grep', 'final_opts', [])
+
+    call denite#custom#var('grep', 'command', ['pt'])
+    call denite#custom#var('grep', 'default_opts',
+        \ ['--nogroup', '--nocolor', '--smart-case'])
+    call denite#custom#var('grep', 'recursive_opts', [])
+    call denite#custom#var('grep', 'pattern_opt', [])
+    call denite#custom#var('grep', 'separator', ['--'])
+    call denite#custom#var('grep', 'final_opts', [])
+    "}}}4
+
+    " - Define alias {{{4
+    call denite#custom#alias('source', 'file/rec/git', 'file/rec')
+    call denite#custom#var('file/rec/git', 'command',
+        \ ['git', 'ls-files', '-co', '--exclude-standard'])
+
+    call denite#custom#alias('source', 'file/rec/py', 'file/rec')
+    call denite#custom#var('file/rec/py', 'command',['scantree.py'])
+    "}}}4
+
+    " - Change default prompt {{{4
+    call denite#custom#option('default', 'prompt', '>')
+    "}}}4
+
+    " - Change ignore_globs {{{4
+    call denite#custom#filter('matcher/ignore_globs', 'ignore_globs',
+        \ [ '.git/', '.ropeproject/', '__pycache__/',
+        \   'venv/', 'images/', '*.min.*', 'img/', 'fonts/'])
+    "}}}4
+
+    " - Custom actions {{{4
+    call denite#custom#action('file', 'test',
+        \ {context -> execute('let g:foo = 1')})
+    call denite#custom#action('file', 'test2',
+        \ {context -> denite#do_action(
+        \  context, 'open', context['targets'])})
+    "}}}4
+
+    " - Define starting keymaps {{{4
+    nnoremap <C-p>f :<C-u>Denite file/rec<CR>
+    "}}}4
+    "}}}3
+elseif g:IsPlugged('ctrlp.vim')
+    " ctrlp settings {{{3
+    let g:ctrlp_map = '<Nop>'
+    nnoremap <C-p>b :<C-u>CtrlPBuffer<CR>
+    nnoremap <C-p>f :<C-u>CtrlPFiler<CR>
+    nnoremap <C-p>m :<C-u>CtrlPMRU<CR>
+    nnoremap <C-p>q :<C-u>CtrlPQuickfix<CR>
+    nnoremap <C-p>u :<C-u>CtrlPUndo<CR>
+    nnoremap <C-p>y :<C-u>CtrlPRegister<CR>
+    let g:ctrlp_lazy_update = 100
+    let g:ctrlp_types = ['buf', 'mru']
     let g:ctrlp_open_muliple_files = 'ij'
     let g:ctrlp_cache_dir = s:base.'/'.s:app.'/ctrlp_cache'
     let g:ctrlp_custom_ignore = {
@@ -563,9 +711,10 @@ if g:IsPlugged('ctrlp.vim')
         let g:ctrlp_clear_cache_on_exit = 1
         let g:ctrlp_user_command = 'ag %s -i --nocolor --nogroup -g ""'
     endif
+    "}}}3
 endif
 
-" for open-browser(previm)
+" for open-browser and previm
 let g:netrw_nogx = 1
 let g:previm_enable_realtime = 1
 
@@ -589,9 +738,9 @@ let g:quickrun_config._ = {
       \ 'outputter/buffer/sprit': 'vertical',
       \ 'outputter/buffer/close_on_empty': 1,
       \ }
-"}}}
+"}}}2
 
-"   lightline setting {{{
+" lightline setting {{{2
 let g:lightline = {
       \   'active': {
       \     'left': [ [ 'mode', 'paste' ], [ 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
@@ -665,46 +814,11 @@ let g:lightline = {
       \   'palette': {},
       \   'winwidth': winwidth(0),
       \ }
-"}}}
+"}}}2
 
-"}}}
+"}}}1
 
-" colorscheme settings {{{
-if g:IsPlugged('onedark.vim')
-    let g:onedark#colors = onedark#GetColors()
-    let g:onedark#extend = { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
-    aug OverrideOnedark
-        au!
-        au ColorScheme * hi Tabline cterm=Bold gui=Bold
-        au ColorScheme * call onedark#set_highlight('EndOfBuffer', {
-                    \ 'fg': g:onedark#colors.black })
-        au ColorScheme * call onedark#set_highlight('Structure', {
-                    \ 'fg': g:onedark#colors.purple })
-        au ColorScheme * call onedark#set_highlight('StorageClass', {
-                    \ 'fg': g:onedark#colors.purple })
-        au ColorScheme * call onedark#set_highlight('StatusLineNC', {
-                    \ 'fg': g:onedark#colors.comment_grey,
-                    \ 'bg': g:onedark#colors.cursor_grey })
-        au ColorScheme * call onedark#set_highlight('TablineSel', {
-                    \ 'bg': g:onedark#extend })
-        au ColorScheme * call onedark#set_highlight('TablineFill', {
-                    \ 'bg': g:onedark#extend })
-        au ColorScheme * call onedark#set_highlight('Cursor', {
-                    \ 'bg': g:onedark#colors.blue })
-        au ColorScheme * call onedark#set_highlight('fishKeyword', {
-                    \ 'fg': g:onedark#colors.purple })
-    aug END
-
-    if IsPlugged('eskk.vim')
-        let g:eskk#cursor_color = {
-            \ 'ascii':  [ g:onedark#colors.yellow['gui'], g:onedark#colors.yellow['gui'] ],
-            \ 'hira':   [ g:onedark#colors.red['gui'],    g:onedark#colors.red['gui']    ],
-            \ 'kata':   [ g:onedark#colors.green['gui'],  g:onedark#colors.green['gui']  ],
-            \ 'abbrev': g:onedark#colors.purple['gui'],
-            \ 'zenei':  g:onedark#colors.yellow['gui']
-            \}
-    endif
-end
+" colorscheme settings {{{1
 if !has('nvim')
     aug ModifyVimStyle
         au!
@@ -717,13 +831,53 @@ if !has('nvim')
     aug END
 end
 if g:IsPlugged('onedark.vim')
+    let g:onedark#colors = onedark#GetColors()
+    let g:onedark#extend = { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
+    aug OverrideOnedark
+        au!
+        au ColorScheme * hi Tabline cterm=Bold gui=Bold
+        au ColorScheme * call onedark#set_highlight('EndOfBuffer', {
+            \ 'fg': g:onedark#colors.black })
+        au ColorScheme * call onedark#set_highlight('Structure', {
+            \ 'fg': g:onedark#colors.purple })
+        au ColorScheme * call onedark#set_highlight('StorageClass', {
+            \ 'fg': g:onedark#colors.purple })
+        au ColorScheme * call onedark#set_highlight('StatusLineNC', {
+            \ 'fg': g:onedark#colors.comment_grey,
+            \ 'bg': g:onedark#colors.cursor_grey })
+        au ColorScheme * call onedark#set_highlight('TablineSel', {
+            \ 'bg': g:onedark#extend })
+        au ColorScheme * call onedark#set_highlight('TablineFill', {
+            \ 'bg': g:onedark#extend })
+        au ColorScheme * call onedark#set_highlight('Cursor', {
+            \ 'bg': g:onedark#colors.blue })
+        au ColorScheme * call onedark#set_highlight('fishKeyword', {
+            \ 'fg': g:onedark#colors.purple })
+    aug END
+
+    " for indentLine
+    let g:indentLine_color_term = g:onedark#colors.comment_grey['cterm']
+    let g:indentLine_color_gui  = g:onedark#colors.comment_grey['gui']
+    let g:indentLine_color_tty_light = g:onedark#colors.comment_grey['cterm16']
+    let g:indentLine_color_tty_dark  = g:onedark#colors.comment_grey['cterm16']
+
+    if IsPlugged('eskk.vim')
+        let g:eskk#cursor_color = {
+            \ 'ascii':  [ g:onedark#colors.yellow['gui'], g:onedark#colors.yellow['gui'] ],
+            \ 'hira':   [ g:onedark#colors.red['gui'],    g:onedark#colors.red['gui']    ],
+            \ 'kata':   [ g:onedark#colors.green['gui'],  g:onedark#colors.green['gui']  ],
+            \ 'abbrev': g:onedark#colors.purple['gui'],
+            \ 'zenei':  g:onedark#colors.yellow['gui']
+            \}
+    endif
+
     color onedark
 else
     set background=dark
 endif
-"}}}
+"}}}1
 
-" settings for some terminal emulators {{{
+" settings for some terminal emulators {{{1
 if !has('gui_running')
     if &term == 'xterm-256color'
         let &t_ti.="\e[0 q"
@@ -747,4 +901,4 @@ if !has('gui_running')
         nnoremap <Char-0x07F> <BS>
     endif
 endif
-"}}}
+"}}}1

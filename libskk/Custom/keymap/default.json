@@ -17,11 +17,7 @@
             "C-f": "expand-preedit",
             "C-b": "shrink-preedit",
             "Right": "expand-preedit",
-            "Left": "shrink-preedit",
-
-            "C-J": "set-input-mode-hiragana",
-            "C-Q": "set-input-mode-katakana",
-            "C-L": "set-input-mode-latin"
+            "Left": "shrink-preedit"
         }
     }
 }

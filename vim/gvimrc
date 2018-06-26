@@ -1,27 +1,31 @@
 
-set guioptions-=T
-set guioptions-=r
-set guioptions-=R
-set guioptions-=l
-set guioptions-=L
-set guioptions-=b
-set guioptions-=e
-set guioptions+=a
-set guioptions-=m
+if has('gui_running') "for gvim {{{
+    set guioptions-=T
+    set guioptions-=r
+    set guioptions-=R
+    set guioptions-=l
+    set guioptions-=L
+    set guioptions-=b
+    set guioptions-=e
+    set guioptions+=a
+    set guioptions-=m
 
-if has('win32') || !has('nvim')
-    set renderoptions=type:directx,renmode:5
-endif
-
-" font setting
-try
-    if has('unix')
-        set guifont=Cica\ 9
-    elseif has('win32')
-        set guifont=GenEi_Gothic_M_SemiBold:h10
+    if has('win32') || !has('nvim') " for Kaoriya vim
+        silent set renderoptions=type:directx,renmode:5
     endif
-catch
-endtry
+
+    if has('win32')
+        silent set guifont=Cica:h9
+    else
+        silent set guifont=Cica\ 9
+    endif
+    "}}}
+elseif exists('g:GuiLoaded') "for neovim-qt {{{
+    set termguicolors
+    silent GuiFont! Cica:h9
+    silent GuiLinespace 0
+    "}}}
+endif
 
 if g:IsPlugged('onedark.vim')
     color onedark
