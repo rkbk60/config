@@ -1,7 +1,7 @@
 set fish_greeting
 set -g FISH_CONFIG_PATH (realpath (status filename))
 
-# update functions {{{
+# update functions {{{1
 set -l fn_dir (string replace '/config.fish' '/functions' $FISH_CONFIG_PATH)
 find $fn_dir/*.fish -maxdepth 0 \
     | string replace -ar '^.*/([^/]*)\.fish.*$' 'ln -s @1$1.fish @2$1.fish ^ /dev/null &' \
@@ -11,9 +11,9 @@ find $fn_dir/*.fish -maxdepth 0 \
 if not test -L ~/.config/fish/functions/fish_prompt.fish
     ln -sf $fn_dir/fish_prompt.fish ~/.config/fish/functions/fish_prompt.fish
 end
-#}}}
+#}}}1
 
-# install fisherman automatically {{{
+# install fisherman automatically {{{1
 begin
     not functions -q fisher
     and test (whoami) != 'root'
@@ -25,9 +25,9 @@ if test $status -eq 0
     test -f $fishfile
         and fisher (cat $fishfile | string join ' ')
 end
-#}}}
+#}}}1
 
-# functions, aliases, plugin settings {{{
+# functions, aliases, plugin settings {{{1
 function als -a name command
     functions -q balias
         and balias $name "$command"
@@ -66,9 +66,9 @@ if executable su
     end
 end
 functions -e als
-#}}}
+#}}}1
 
-# set onedark colorscheme {{{
+# set onedark colorscheme {{{1
 if begin status is-interactive; and functions -q set_onedark; end
     set -l od_option
     if test "$TERM" = "linux"
@@ -99,10 +99,10 @@ if begin status is-interactive; and functions -q set_onedark; end
         set_onedark -b -256
     end
 end
-#}}}
+#}}}1
 
-# load optional settings {{{
+# load optional settings {{{1
 test -f "$HOME/.fishrc"
     and source "$HOME/.fishrc"
     or  true
-#}}}
+#}}}1
