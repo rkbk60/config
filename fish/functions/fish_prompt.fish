@@ -21,7 +21,7 @@ function fish_prompt
         else
             set -l __pwd__ (basename (builtin pwd))
             set_color brblue -o
-            printf (test "$__pwd__" = "/"; and printf '(ROOT)'; or printf $__pwd__)
+            printf "%s" (test "$__pwd__" = "/"; and printf '(ROOT)'; or printf $__pwd__)
         end
     end
 
