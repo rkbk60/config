@@ -7,7 +7,6 @@ language C
 let s:here = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 let s:base = substitute(s:here, 'vim', '.data', 'g')
 let s:app  = has('nvim') ? 'nvim' : 'vim'
-let s:appbase = s:base.'/'.s:app
 
 fun! IsPlugged(name)
     return exists('g:plugs') && has_key(g:plugs, a:name) && isdirectory(g:plugs[a:name].dir)
@@ -66,6 +65,7 @@ if filereadable(s:vimplug)
         let g:python3_host_prog = "/usr/bin/python3"
         Plug 'Shougo/denite.nvim', { 'do': ':UpdateRemotePlugins' }
         Plug 'chemzqm/denite-extra'
+        Plug 'Shougo/neoyank.vim'
         Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
         Plug 'itchyny/lightline.vim'
         Plug 'w0rp/ale'
@@ -152,14 +152,9 @@ set iminsert=0
 set imsearch=-1
 set ambiwidth=double
 set titlestring=%M%{has('nvim')?'nvim':(has('gui_running')?'gvim':'vim')}%{strlen(@%)?'\ \ :\ '.expand('%:p:~'):''}
+set statusline=\ %M%n.%v.%l\ %{printf('')}\ %{exists('g:debug')&&g:debug==1?'color:'.synIDattr(synID(line('.'),col('.'),1),'name'):''}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
 if has('nvim')
     set noshowmode
-else
-    if exists('g:debug') && g:debug == 1
-        set statusline=\ %M%n.%v.%l\ %{printf('')}\ %{'color:'.synIDattr(synID(line('.'),col('.'),1),'name')}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
-    else
-        set statusline=\ %M%n.%v.%l%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
-    endif
 endif
 
 let s:tmpdir = s:base.'/'.s:app.'/tmp'
@@ -232,7 +227,7 @@ let g:vim_indent_cont = &tabstop
 
 " set custom tabline {{{2
 fun! GitInfo()
-    if g:IsPlugged('vim-fugitive') && exists('*fugitive#head')
+    if IsPlugged('vim-fugitive') && exists('*fugitive#head')
         let l:branch = fugitive#head()
         return (l:branch == '') ? '' : 'Git:'.l:branch.' '
     else
@@ -286,7 +281,7 @@ let g:is_posix = 1
 " IMEs {{{2
 let g:skk_dict_path = has('win32') ? $HOME."/skk/" : '/usr/share/skk/'
 let g:skk_dict = g:skk_dict_path.'SKK-JISYO.L'
-if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict)
+if IsPlugged('eskk.vim') && filereadable(g:skk_dict)
     " eskk settings {{{3
     set imdisable
     nnoremap <silent> <C-\><C-\> :<C-u>call EskkIntelijentToggle()<CR>
@@ -458,7 +453,7 @@ if g:IsPlugged('eskk.vim') && filereadable(g:skk_dict)
         au User eskk-disable-post   call FixEskkStatus()
     aug END
     " }}}3
-elseif g:IsPlugged('im_control.vim')
+elseif IsPlugged('im_control.vim')
     " im_control settings {{{3
     if has('win32')
         let IM_CtrlMode = 4
@@ -489,31 +484,31 @@ endif
 "}}}2
 
 " input helpers {{{2
-if g:IsPlugged('vim-smartinput-endwise')
+if IsPlugged('vim-smartinput-endwise')
     call smartinput_endwise#define_default_rules()
 endif
 
-if g:IsPlugged('vim-easy-align')
+if IsPlugged('vim-easy-align')
     vmap <CR> <Plug>(EasyAlign)
 endif
 
-if g:IsPlugged('vim-operator-surround')
+if IsPlugged('vim-operator-surround')
     nmap ey <Plug>(operator-surround-append)
     nmap ed <Plug>(operator-surround-delete)
     nmap er <Plug>(operator-surround-replace)
 endif
 
-if g:IsPlugged('deoplete.vim')
+if IsPlugged('deoplete.vim')
     call deoplete#enable()
     let g:deoplete#auto_complete_delay = 0
     let g:deoplete#auto_complete_start_length = 1
     let g:deoplete#max_list = 10000
     let g:deoplete#omni_patterns = {}
     set completeopt-=preview
-    if g:IsPlugged('neco-vim')
+    if IsPlugged('neco-vim')
         let g:necovim#complete_functions.Ref = 'ref#complete'
     endif
-    if g:IsPlugged('deoplete-jedi')
+    if IsPlugged('deoplete-jedi')
         let g:deoplete#sources#jedi#python_path = g:python3_host_prog
     endif
 endif
@@ -543,7 +538,7 @@ let g:tcomment_mapleader2 = '<C-/>'
 
 let g:polyglot_disabled = ['markdown']
 
-if g:IsPlugged('nim.vim')
+if IsPlugged('nim.vim')
     fun! JumpToDef()
         if exists("*GotoDefinition_" . &filetype)
             call GotoDefinition_{&filetype}()
@@ -560,41 +555,60 @@ let g:indentLine_bufNameExeclude  = ['!.*', 'term:.*']
 "}}}2
 
 " utilities {{{2
-if g:IsPlugged('denite.nvim')
+" for open-browser and previm
+let g:netrw_nogx = 1
+let g:previm_enable_realtime = 1
+
+" for split-term
+let g:disable_key_mappings = 1
+
+if IsPlugged('vim-quickrun')
+    nnoremap <F9> :<C-u>QuickRun
+    if IsPlugged('wandbox-vim')
+        nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
+    endif
+endif
+
+" for quickrun
+let g:quickrun_config = get(g:, 'quickrun_config', {})
+let g:quickrun_config._ = {
+      \ 'runner': 'vimproc',
+      \ 'outputter': 'error',
+      \ 'outputter/error/success': 'buffer',
+      \ 'outputter/error/error': 'quickfix',
+      \ 'outputter/buffer/sprit': 'vertical',
+      \ 'outputter/buffer/close_on_empty': 1,
+      \ }
+"}}}2
+
+" launchers {{{2
+if IsPlugged('denite.nvim')
     " denite settings {{{3
-    " - Change file/rec command {{{4
-    call denite#custom#var('file/rec', 'command',
-        \ ['ag', '--follow', '--nocolor', '--nogroup', '-g', ''])
-    " For ripgrep
-    " Note: It is slower than ag
-    call denite#custom#var('file/rec', 'command',
-        \ ['rg', '--files', '--glob', '!.git'])
-    " For Pt(the platinum searcher)
-    " NOTE: It also supports windows.
-    call denite#custom#var('file/rec', 'command',
-        \ ['pt', '--follow', '--nocolor', '--nogroup',
-        \  (has('win32') ? '-g:' : '-g='), ''])
-    " For python script scantree.py (works if python 3.5+ in path)
-    " Read bellow on this file to learn more about scantree.py
-    call denite#custom#var('file/rec', 'command', ['scantree.py'])
+    " - Define keymaps to run denite command {{{4
+    nnoremap <silent> <C-p>b  :<C-u>Denite buffer<CR>
+    nnoremap <silent> <C-p>B  :<C-u>Denite buffer -buffer-name=file<CR>
+    nnoremap <silent> <C-p>f  :<C-u>Denite file/rec<CR>
+    nnoremap <silent> <C-p>g  :<C-u>Denite grep<CR>
+    nnoremap <silent> <C-p>h  :<C-u>Denite history<CR>
+    nnoremap <silent> <C-p>m  :<C-u>Denite file/old<CR>
+    nnoremap <silent> <C-p>p  :<C-u>Denite project<CR>
+    nnoremap <silent> <C-p>q  :<C-u>Denite quickfix<CR>
+    nnoremap <silent> <C-p>ss :<C-u>Denite line<CR>
+    nnoremap <silent> <C-p>sw :<C-u>DeniteWithCursorWord line<CR>
+    nnoremap <silent> <C-p>y  :<C-u>Denite neoyank<CR>
     "}}}4
 
-    " - Change mappings {{{4
-    call denite#custom#map(
-        \ 'insert',
-        \ '<C-j>',
-        \ '<denite:move_to_next_line>',
-        \ 'noremap'
-        \)
-    call denite#custom#map(
-        \ 'insert',
-        \ '<C-k>',
-        \ '<denite:move_to_previous_line>',
-        \ 'noremap'
-        \)
+    " - Change mappings on denite {{{4
+    call denite#custom#map('insert', '<C-j>', '<denite:move_to_next_line>', 'noremap')
+    call denite#custom#map('insert', '<C-k>', '<denite:move_to_previous_line>', 'noremap')
+    call denite#custom#map('insert', '<C-a>', '<Home>')
+    call denite#custom#map('insert', '<C-e>', '<End>')
+    call denite#custom#map('insert', '<C-f>', '<Right>')
+    call denite#custom#map('insert', '<C-b>', '<Left>')
     "}}}4
 
-    " - Change matchers {{{4
+    " - Change search options {{{4
+    " Change matchers
     call denite#custom#source(
         \ 'file_mru', 'matchers', ['matcher/fuzzy', 'matcher/project_files'])
     call denite#custom#source(
@@ -607,50 +621,59 @@ if g:IsPlugged('denite.nvim')
 
     " - Add custom menus {{{4
     let s:menus = {}
-
     let s:menus.fish = {
         \ 'description': 'Edit your import fish configuration'
         \ }
     let s:menus.fish.file_candidates = [
         \ ['config', '~/.config/fish/config.fish']
         \ ]
-
     call denite#custom#var('menu', 'menus', s:menus)
     "}}}4
 
-    " - Add alt-grep commands on grep source {{{4
-    call denite#custom#var('grep', 'command', ['ag'])
-    call denite#custom#var('grep', 'default_opts',
-        \ ['-i', '--vimgrep'])
-    call denite#custom#var('grep', 'recursive_opts', [])
-    call denite#custom#var('grep', 'pattern_opt', [])
-    call denite#custom#var('grep', 'separator', ['--'])
-    call denite#custom#var('grep', 'final_opts', [])
+    " - Add alt-grep commands {{{4
+    if executable('rg')
+        call denite#custom#var('file/rec', 'command',
+            \ ['rg', '--files', '--glob', '!.git'])
+        call denite#custom#var('grep', 'command', ['rg'])
+        call denite#custom#var('grep', 'default_opts',
+            \ ['--vimgrep', '--no-heading'])
+        call denite#custom#var('grep', 'recursive_opts', [])
+        call denite#custom#var('grep', 'pattern_opt', ['--regexp'])
+        call denite#custom#var('grep', 'separator', ['--'])
+        call denite#custom#var('grep', 'final_opts', [])
+    elseif executable('pt')
+        call denite#custom#var('file/rec', 'command',
+            \ ['pt', '--follow', '--nocolor', '--nogroup',
+            \  (has('win32') ? '-g:' : '-g='), ''])
+        call denite#custom#var('grep', 'command', ['pt'])
+        call denite#custom#var('grep', 'default_opts',
+            \ ['--nogroup', '--nocolor', '--smart-case'])
+        call denite#custom#var('grep', 'recursive_opts', [])
+        call denite#custom#var('grep', 'pattern_opt', [])
+        call denite#custom#var('grep', 'separator', ['--'])
+        call denite#custom#var('grep', 'final_opts', [])
+    elseif executable('ag')
+        call denite#custom#var('file/rec', 'command',
+            \ ['ag', '--follow', '--nocolor', '--nogroup', '-g', ''])
+        call denite#custom#var('grep', 'command', ['ag'])
+        call denite#custom#var('grep', 'default_opts',
+            \ ['-i', '--vimgrep'])
+        call denite#custom#var('grep', 'recursive_opts', [])
+        call denite#custom#var('grep', 'pattern_opt', [])
+        call denite#custom#var('grep', 'separator', ['--'])
+        call denite#custom#var('grep', 'final_opts', [])
+    endif
 
-    call denite#custom#var('grep', 'command', ['ack'])
-    call denite#custom#var('grep', 'default_opts',
-        \ ['--ackrc', $HOME.'/.ackrc', '-H',
-        \  '--nopager', '--nocolor', '--nogroup', '--column'])
-    call denite#custom#var('grep', 'recursive_opts', [])
-    call denite#custom#var('grep', 'pattern_opt', ['--match'])
-    call denite#custom#var('grep', 'separator', ['--'])
-    call denite#custom#var('grep', 'final_opts', [])
-
-    call denite#custom#var('grep', 'command', ['rg'])
-    call denite#custom#var('grep', 'default_opts',
-        \ ['--vimgrep', '--no-heading'])
-    call denite#custom#var('grep', 'recursive_opts', [])
-    call denite#custom#var('grep', 'pattern_opt', ['--regexp'])
-    call denite#custom#var('grep', 'separator', ['--'])
-    call denite#custom#var('grep', 'final_opts', [])
-
-    call denite#custom#var('grep', 'command', ['pt'])
-    call denite#custom#var('grep', 'default_opts',
-        \ ['--nogroup', '--nocolor', '--smart-case'])
-    call denite#custom#var('grep', 'recursive_opts', [])
-    call denite#custom#var('grep', 'pattern_opt', [])
-    call denite#custom#var('grep', 'separator', ['--'])
-    call denite#custom#var('grep', 'final_opts', [])
+    if executable('ack')
+        call denite#custom#var('grep', 'command', ['ack'])
+        call denite#custom#var('grep', 'default_opts',
+            \ ['--ackrc', $HOME.'/.ackrc', '-H',
+            \  '--nopager', '--nocolor', '--nogroup', '--column'])
+        call denite#custom#var('grep', 'recursive_opts', [])
+        call denite#custom#var('grep', 'pattern_opt', ['--match'])
+        call denite#custom#var('grep', 'separator', ['--'])
+        call denite#custom#var('grep', 'final_opts', [])
+    endif
     "}}}4
 
     " - Define alias {{{4
@@ -662,8 +685,20 @@ if g:IsPlugged('denite.nvim')
     call denite#custom#var('file/rec/py', 'command',['scantree.py'])
     "}}}4
 
-    " - Change default prompt {{{4
-    call denite#custom#option('default', 'prompt', '>')
+    " - Change appearance {{{4
+    hi link DeniteMatchedChar Search
+    hi link DeniteSearch Search
+    call denite#custom#option('default', {
+        \ 'auto_resize': v:true,
+        \ 'highlight_matched_char': 'DeniteMatchedChar',
+        \ 'highlight_mode_insert': 'DeniteSearch',
+        \ 'prompt': '>',
+        \ 'smartcase': v:true,
+        \ 'winheight': '10'
+        \})
+    if IsPlugged('lightline.vim')
+        call denite#custom#option('default', 'statusline', v:false)
+    endif
     "}}}4
 
     " - Change ignore_globs {{{4
@@ -671,20 +706,9 @@ if g:IsPlugged('denite.nvim')
         \ [ '.git/', '.ropeproject/', '__pycache__/',
         \   'venv/', 'images/', '*.min.*', 'img/', 'fonts/'])
     "}}}4
-
-    " - Custom actions {{{4
-    call denite#custom#action('file', 'test',
-        \ {context -> execute('let g:foo = 1')})
-    call denite#custom#action('file', 'test2',
-        \ {context -> denite#do_action(
-        \  context, 'open', context['targets'])})
-    "}}}4
-
-    " - Define starting keymaps {{{4
-    nnoremap <C-p>f :<C-u>Denite file/rec<CR>
     "}}}4
     "}}}3
-elseif g:IsPlugged('ctrlp.vim')
+elseif IsPlugged('ctrlp.vim')
     " ctrlp settings {{{3
     let g:ctrlp_map = '<Nop>'
     nnoremap <C-p>b :<C-u>CtrlPBuffer<CR>
@@ -694,7 +718,7 @@ elseif g:IsPlugged('ctrlp.vim')
     nnoremap <C-p>u :<C-u>CtrlPUndo<CR>
     nnoremap <C-p>y :<C-u>CtrlPRegister<CR>
     let g:ctrlp_lazy_update = 100
-    let g:ctrlp_types = ['buf', 'mru']
+    let g:ctrlp_types = ['buf', 'mru', 'fil', 'quickfix', 'undo', 'register']
     let g:ctrlp_open_muliple_files = 'ij'
     let g:ctrlp_cache_dir = s:base.'/'.s:app.'/ctrlp_cache'
     let g:ctrlp_custom_ignore = {
@@ -713,41 +737,25 @@ elseif g:IsPlugged('ctrlp.vim')
     endif
     "}}}3
 endif
-
-" for open-browser and previm
-let g:netrw_nogx = 1
-let g:previm_enable_realtime = 1
-
-" for split-term
-let g:disable_key_mappings = 1
-
-if g:IsPlugged('vim-quickrun')
-    nnoremap <F9> :<C-u>QuickRun
-    if g:IsPlugged('wandbox-vim')
-        nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
-    endif
-endif
-
-" for quickrun
-let g:quickrun_config = get(g:, 'quickrun_config', {})
-let g:quickrun_config._ = {
-      \ 'runner': 'vimproc',
-      \ 'outputter': 'error',
-      \ 'outputter/error/success': 'buffer',
-      \ 'outputter/error/error': 'quickfix',
-      \ 'outputter/buffer/sprit': 'vertical',
-      \ 'outputter/buffer/close_on_empty': 1,
-      \ }
 "}}}2
 
-" lightline setting {{{2
+" lightline {{{2
+fun! CustomLightlineMode()
+    if &ft == 'denite'
+        let l:raw = substitute(denite#get_status_mode(), '\v[- ]', "", 'g')
+        call lightline#link(tolower(l:raw[0]))
+        return 'Denite'
+    else
+        return lightline#mode()
+    endif
+endfun
 let g:lightline = {
       \   'active': {
       \     'left': [ [ 'mode', 'paste' ], [ 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
       \     'right': [ [ 'lineinfo' ] ]
       \   },
       \   'inactive': {
-      \     'left': [ [ 'filename' ] ],
+      \     'left': [ [ 'fnamewithbufnum' ] ],
       \     'right': [ [ 'lineinfo' ] ]
       \   },
       \   'tabline': {
@@ -759,7 +767,6 @@ let g:lightline = {
       \     'inactive': [ 'modified', 'tabnum', 'filename' ]
       \   },
       \   'component': {
-      \     'mode': '%{lightline#mode()}',
       \     'absolutepath': '%F', 'relativepath': '%f', 'filename': '%t', 'modified': '%M', 'bufnum': '%n',
       \     'paste': '%{&paste?"PASTE":""}', 'readonly': '%R', 'charvalue': '%b', 'charvaluehex': '%B',
       \     'spell': '%{&spell?&spelllang:""}', 'fileencoding': '%{&fenc==#"utf-8"?"":&fenc!=#""?&fenc:&enc}',
@@ -767,7 +774,8 @@ let g:lightline = {
       \     'lineinfo': '%3l:%-2v', 'line': '%l', 'column': '%c', 'winnr': '%{winnr()}',
       \     'fileformat': '%{&ff==#"unix"?"":&ff==#"dos"?"CRLF":&enc}',
       \     'separator': '', 'totalline': '%L', 
-      \     'fileinfo': '%{&fenc==#"utf-8"?"":&fenc!=#""?&fenc:&enc} %{&ff==#"unix"?"":&ff==#"dos"?"CRLF":&enc} %{&ft!=#""?&ft:"plain"}:%L'
+      \     'fileinfo': '%{&fenc==#"utf-8"?"":&fenc!=#""?&fenc:&enc} %{&ff==#"unix"?"":&ff==#"dos"?"CRLF":&enc} %{&ft!=#""?&ft:"plain"}:%L',
+      \     'fnamewithbufnum': '%n %t'
       \   },
       \   'component_visible_condition': {
       \     'modified': '&modified||!&modifiable', 'readonly': '&readonly', 'paste': '&paste', 'spell': '&spell'
@@ -775,8 +783,8 @@ let g:lightline = {
       \   'component_function': {
       \     'buffer_info': 'lightline#buffer#bufferinfo',
       \     'git_branch': 'fugitive#head',
+      \     'mode': 'CustomLightlineMode'
       \   },
-      \   'component_function_visible_condition': {},
       \   'component_expand': {
       \     'tabs': 'lightline#tabs',
       \     'buffer_current': 'lightline#buffer#buffercurrent',
@@ -790,30 +798,23 @@ let g:lightline = {
       \     'linter_warnings': 'warning', 'linter_errors': 'error',
       \     'buffer_current': 'tabsel', 'buffer_before': 'raw', 'buffer_after': 'raw',
       \   },
-      \   'component_raw': {},
-      \   'tab_component': {},
       \   'tab_component_function': {
       \     'filename': 'lightline#tab#filename', 'modified': 'lightline#tab#modified',
       \     'readonly': 'lightline#tab#readonly', 'tabnum': 'lightline#tab#tabnum',
       \   },
-      \   'colorscheme': 'onedark',
+      \   'colorscheme': 'default',
       \   'mode_map': {
       \     'n': 'Normal', 'i': 'Insert', 'R': 'Replace', 'v': 'Visual', 'V': 'V-Line', "\<C-v>": 'V-Block',
       \     'c': 'Command', 's': 'Select', 'S': 'S-Line', "\<C-s>": 'S-Block', 't': 'Terminal',
       \   },
-      \   'separator': { 'left': "", 'right': "" },
-      \   'subseparator': { 'left': "", 'right': "" },
-      \   'tabline_separator': {},
-      \   'tabline_subseparator': {},
       \   'enable': { 'statusline': 1, 'tabline': 0 },
       \   '_mode_': {
       \     'n': 'normal', 'i': 'insert', 'R': 'replace', 'v': 'visual', 'V': 'visual', "\<C-v>": 'visual',
       \     'c': 'command', 's': 'select', 'S': 'select', "\<C-s>": 'select', 't': 'terminal'
       \   },
       \   'mode_fallback': { 'replace': 'insert', 'terminal': 'insert', 'select': 'visual' },
-      \   'palette': {},
       \   'winwidth': winwidth(0),
-      \ }
+      \}
 "}}}2
 
 "}}}1
@@ -830,12 +831,15 @@ if !has('nvim')
         au ColorScheme * hi StatusLineNC cterm=Italic gui=Italic
     aug END
 end
-if g:IsPlugged('onedark.vim')
+if IsPlugged('onedark.vim')
+    let g:lightline.colorscheme = 'onedark'
     let g:onedark#colors = onedark#GetColors()
-    let g:onedark#extend = { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
+    let g:onedark#extend = {
+        \ 'blue': { 'cterm16': '4', 'cterm': '17',  'gui': '#314383' },
+        \ 'gray': { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
+        \}
     aug OverrideOnedark
         au!
-        au ColorScheme * hi Tabline cterm=Bold gui=Bold
         au ColorScheme * call onedark#set_highlight('EndOfBuffer', {
             \ 'fg': g:onedark#colors.black })
         au ColorScheme * call onedark#set_highlight('Structure', {
@@ -846,13 +850,20 @@ if g:IsPlugged('onedark.vim')
             \ 'fg': g:onedark#colors.comment_grey,
             \ 'bg': g:onedark#colors.cursor_grey })
         au ColorScheme * call onedark#set_highlight('TablineSel', {
-            \ 'bg': g:onedark#extend })
+            \ 'bg': g:onedark#extend.gray })
         au ColorScheme * call onedark#set_highlight('TablineFill', {
-            \ 'bg': g:onedark#extend })
+            \ 'bg': g:onedark#extend.gray })
         au ColorScheme * call onedark#set_highlight('Cursor', {
             \ 'bg': g:onedark#colors.blue })
         au ColorScheme * call onedark#set_highlight('fishKeyword', {
             \ 'fg': g:onedark#colors.purple })
+        au ColorScheme * call onedark#set_highlight('shQuote', {
+            \ 'fg': g:onedark#colors.green })
+        au ColorScheme * call onedark#set_highlight('DeniteMatchedChar', {
+            \ 'fg': g:onedark#colors.red })
+        au ColorScheme * call onedark#set_highlight('DeniteSearch', {
+            \ 'fg': g:onedark#colors.yellow,
+            \ 'bg': g:onedark#colors.cursor_grey })
     aug END
 
     " for indentLine

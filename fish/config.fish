@@ -1,16 +1,23 @@
 set fish_greeting
 set -g FISH_CONFIG_PATH (realpath (status filename))
 
+# set variables {{{1
+set -x PIPENV_VENV_IN_PROJECT 'true'
+#}}}1
+
 # update functions {{{1
-set -l fn_dir (string replace '/config.fish' '/functions' $FISH_CONFIG_PATH)
-find $fn_dir/*.fish -maxdepth 0 \
+set -l fn_from (string replace '/config.fish' '/functions' $FISH_CONFIG_PATH)
+set -l fn_to   "$HOME/.config/fish/functions"
+ln -sf $fn_from/fish_prompt.fish $fn_to/fish_prompt.fish
+find $fn_from/*.fish -maxdepth 0 \
     | string replace -ar '^.*/([^/]*)\.fish.*$' 'ln -s @1$1.fish @2$1.fish ^ /dev/null &' \
-    | string replace -a  '@1' $fn_dir/ \
-    | string replace -a  '@2' '~/.config/fish/functions/' \
+    | string replace -a  '@1' $fn_from/ \
+    | string replace -a  '@2' $fn_to/ \
     | source
-if not test -L ~/.config/fish/functions/fish_prompt.fish
-    ln -sf $fn_dir/fish_prompt.fish ~/.config/fish/functions/fish_prompt.fish
-end
+# remove blocken links
+find -L $fn_to/ -type l \
+    | string replace -r '^(.*)?' 'rm $1' \
+    | source
 #}}}1
 
 # install fisherman automatically {{{1
@@ -60,6 +67,11 @@ if functions -q nvim
         als gnvim 'oni'
     end
 end
+if executable rg
+    function rf -a arg
+        rg . --files -g $arg
+    end
+end
 if executable su
     function fisu
         /bin/su --shell=/usr/bin/fish $argv
@@ -101,8 +113,3 @@ if begin status is-interactive; and functions -q set_onedark; end
 end
 #}}}1
 
-# load optional settings {{{1
-test -f "$HOME/.fishrc"
-    and source "$HOME/.fishrc"
-    or  true
-#}}}1
