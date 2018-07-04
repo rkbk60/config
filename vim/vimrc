@@ -179,10 +179,13 @@ endif
 
 " keymaps {{{1
 let g:mapleader="<Space>"
+noremap <Space> <Nop>
+" normal/visual mode > moving
 noremap j gj
 noremap k gk
 noremap gj j
 noremap gk k
+noremap q $
 noremap <Up> gk
 noremap <Down> gj
 noremap <A-Up> <C-b>
@@ -191,21 +194,35 @@ noremap <A-Left> 0
 noremap <A-Right> $
 noremap <C-Left> b
 noremap <C-Right> w
+" normal/visual mode > cut/yank/paste
+noremap x "_x
+noremap X "_X
+noremap s "_s
+noremap S "_S
+nnoremap Y y$
 nnoremap <C-Up> "zdd<Up>"zP
 nnoremap <C-Down> "zdd"zp
 vnoremap <C-Up> "zdd<Up>"zP
 vnoremap <C-Down> "zdd"zp
-vnoremap < <gv
-vnoremap > >gv
+" normal/visual mode > window/buffer
+nnoremap <Tab> <C-w>w
+nnoremap <S-Tab> <C-w>W
+nnoremap <BackSpace> <C-w>W
+nnoremap <silent> <C-a> :<C-u>bn<CR>
+nnoremap <silent> <C-x> :<C-u>bp<CR>
+" normal/visual mode > other
+nnoremap Q q
 noremap + <C-a>
 noremap - <C-x>
+vnoremap < <gv
+vnoremap > >gv
+" in insert mode
 inoremap <C-Backspace> <ESC>ciw
 inoremap <C-Delete> <Space><ESC>ciw
 inoremap <C-H> <ESC>ciw
 inoremap <C-;> <Delete>
 inoremap <C-+> <Space><ESC>ciw
-nnoremap <Tab> <C-w>w
-nnoremap <BackSpace> <C-w>W
+" in command mode (emulate Emacs binding)
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
 cnoremap <C-b> <Left>
@@ -213,13 +230,8 @@ cnoremap <C-f> <Right>
 cnoremap <C-a> <Home>
 cnoremap <C-e> <End>
 cnoremap <C-d> <Del>
-nnoremap <silent>BB :bn<CR>
-noremap x "_x
-noremap X "_X
-noremap s "_s
-noremap S "_S
+" in terminal mode
 tnoremap <S-Space> <Space>
-tnoremap <C-@><C-w> <C-\><C-n><C-w>
 "}}}1
 
 " settings NOT related to plugins {{{1
@@ -276,7 +288,6 @@ set foldtext=FoldTextCustom()
 "}}}1
 
 " settings related to plugins {{{1
-let g:is_posix = 1
 
 " IMEs {{{2
 let g:skk_dict_path = has('win32') ? $HOME."/skk/" : '/usr/share/skk/'
@@ -835,7 +846,6 @@ if IsPlugged('onedark.vim')
     let g:lightline.colorscheme = 'onedark'
     let g:onedark#colors = onedark#GetColors()
     let g:onedark#extend = {
-        \ 'blue': { 'cterm16': '4', 'cterm': '17',  'gui': '#314383' },
         \ 'gray': { 'cterm16': '0', 'cterm': '234', 'gui': '#21252B' }
         \}
     aug OverrideOnedark
@@ -862,23 +872,23 @@ if IsPlugged('onedark.vim')
         au ColorScheme * call onedark#set_highlight('DeniteMatchedChar', {
             \ 'fg': g:onedark#colors.red })
         au ColorScheme * call onedark#set_highlight('DeniteSearch', {
-            \ 'fg': g:onedark#colors.yellow,
+            \ 'fg': g:onedark#colors.dark_yellow,
             \ 'bg': g:onedark#colors.cursor_grey })
     aug END
 
     " for indentLine
-    let g:indentLine_color_term = g:onedark#colors.comment_grey['cterm']
-    let g:indentLine_color_gui  = g:onedark#colors.comment_grey['gui']
-    let g:indentLine_color_tty_light = g:onedark#colors.comment_grey['cterm16']
-    let g:indentLine_color_tty_dark  = g:onedark#colors.comment_grey['cterm16']
+    let g:indentLine_color_term = g:onedark#colors.comment_grey.cterm
+    let g:indentLine_color_gui  = g:onedark#colors.comment_grey.gui
+    let g:indentLine_color_tty_light = g:onedark#colors.comment_grey.cterm16
+    let g:indentLine_color_tty_dark  = g:onedark#colors.comment_grey.cterm16
 
     if IsPlugged('eskk.vim')
         let g:eskk#cursor_color = {
-            \ 'ascii':  [ g:onedark#colors.yellow['gui'], g:onedark#colors.yellow['gui'] ],
-            \ 'hira':   [ g:onedark#colors.red['gui'],    g:onedark#colors.red['gui']    ],
-            \ 'kata':   [ g:onedark#colors.green['gui'],  g:onedark#colors.green['gui']  ],
-            \ 'abbrev': g:onedark#colors.purple['gui'],
-            \ 'zenei':  g:onedark#colors.yellow['gui']
+            \ 'ascii':  g:onedark#colors.yellow.gui,
+            \ 'hira':   g:onedark#colors.red.gui,
+            \ 'kata':   g:onedark#colors.green.gui,
+            \ 'abbrev': g:onedark#colors.purple.gui,
+            \ 'zenei':  g:onedark#colors.yellow.gui
             \}
     endif
 
