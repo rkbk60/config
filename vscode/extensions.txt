@@ -1,0 +1,6 @@
+AndrsDC.base16-themes
+DavidAnson.vscode-markdownlint
+fallenwood.vimL
+formulahendry.code-runner
+vscodevim.vim
+zhuangtongfa.Material-theme

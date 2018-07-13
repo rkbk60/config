@@ -26,11 +26,14 @@ begin
     and test (whoami) != 'root'
 end
 if test $status -eq 0
-    curl -Lo $HOME/.config/fish/fisher.fish --create-dirs https://git.io/fisher
-    source $HOME/.config/fish/fisher.fish
-    set -l fishfile (dirname_alt $FISH_CONFIG_PATH)/fishfile
-    test -f $fishfile
-        and fisher (cat $fishfile | string join ' ')
+    read -P "Install fisherman? [Y/n] " install_fisher
+    if string match -iq 'y' $install_fisher
+        curl -Lo $HOME/.config/fish/fisher.fish --create-dirs https://git.io/fisher
+        source $HOME/.config/fish/fisher.fish
+        set -l fishfile (dirname_alt $FISH_CONFIG_PATH)/fishfile
+        test -f $fishfile
+            and fisher (cat $fishfile | string join ' ')
+    end
 end
 #}}}1
 
