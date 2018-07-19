@@ -16,7 +16,7 @@ find $fn_from/*.fish -maxdepth 0 \
     | source
 # remove blocken links
 find -L $fn_to/ -type l \
-    | string replace -r '^(.*)?' 'rm $1' \
+    | string replace -r '^(.*)?' 'rm $1 &' \
     | source
 #}}}1
 
@@ -26,14 +26,12 @@ begin
     and test (whoami) != 'root'
 end
 if test $status -eq 0
-    read -P "Install fisherman? [Y/n] " install_fisher
-    if string match -iq 'y' $install_fisher
-        curl -Lo $HOME/.config/fish/fisher.fish --create-dirs https://git.io/fisher
-        source $HOME/.config/fish/fisher.fish
-        set -l fishfile (dirname_alt $FISH_CONFIG_PATH)/fishfile
-        test -f $fishfile
-            and fisher (cat $fishfile | string join ' ')
-    end
+    set -l fisher_path "$HOME/.config/fish/functions/fisher.fish"
+    curl -Lo $fisher_path --create-dirs https://git.io/fisher
+    source $fisher_path
+    set -l fishfile (dirname_alt $FISH_CONFIG_PATH)/fishfile
+    test -f $fishfile
+        and fisher (cat $fishfile | string join ' ')
 end
 #}}}1
 
@@ -62,20 +60,20 @@ if functions -q fisher
         end
     end
 end
-if functions -q nvim
-    if functions -q nvim-qt
+if type -q nvim
+    if type -q nvim-qt
         als gnvim 'nvim-qt --no-ext-tabline'
         als qvim  'nvim-qt --no-ext-tabline'
-    else if functions -q oni
+    else if type -q oni
         als gnvim 'oni'
     end
 end
-if executable rg
+if type -q rg
     function rf -a arg
         rg . --files -g $arg
     end
 end
-if executable su
+if type -q su
     function fisu
         /bin/su --shell=/usr/bin/fish $argv
     end
@@ -87,8 +85,8 @@ functions -e als
 if begin status is-interactive; and functions -q set_onedark; end
     set -l od_option
     if test "$TERM" = "linux"
-        set_onedark_color black 050505 default
-        set_onedark_color white eeeeee default
+        set_onedark_color black 000000 16
+        set_onedark_color white ffffff 231
     else if set -q VIM
         set od_option '-256'
     else if string match -q 'eterm-*' $TERM

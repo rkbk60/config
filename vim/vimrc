@@ -1,4 +1,3 @@
-
 set encoding=utf8
 scriptencoding utf-8
 language C
@@ -60,6 +59,7 @@ if filereadable(s:vimplug)
     Plug 'tyru/eskk.vim'
     Plug 'fuenor/im_control.vim'
     Plug 'simeji/winresizer'
+    Plug 'tpope/vim-vinegar'
     if has('nvim') && has('unix')
         let g:python_host_prog  = "/usr/bin/python2"
         let g:python3_host_prog = "/usr/bin/python3"
@@ -71,14 +71,12 @@ if filereadable(s:vimplug)
         Plug 'w0rp/ale'
         Plug 'Chiel92/vim-autoformat'
         Plug 'maximbaz/lightline-ale'
-        Plug 'parsonsmatt/intero-neovim'
+        Plug 'autozimu/LanguageClient-neovim',    { 'branch': 'next', 'do': 'bash install.sh' }
         Plug 'zchee/deoplete-clang',              { 'for': 'cpp' }
         Plug 'dag/vim-fish',                      { 'for': 'fish' }
         Plug 'ponko2/deoplete-fish',              { 'for': 'fish' }
         Plug 'fatih/vim-go',                      { 'for': 'go', 'do': ':GoInstallBinaries' }
         Plug 'zchee/deoplete-go',                 { 'for': 'go' }
-        Plug 'eagletmt/neco-ghc',                 { 'for': 'haskell' }
-        Plug 'nbouscal/vim-stylish-haskell',      { 'for': 'haskell' }
         Plug 'JuliaEditorSupport/deoplete-julia', { 'for': 'julia' }
         Plug 'baabelfish/nvim-nim',               { 'for': 'nim' }
         Plug 'zchee/deoplete-jedi',               { 'for': 'python' }
@@ -90,6 +88,11 @@ if filereadable(s:vimplug)
         Plug 'kassio/neoterm'
         Plug 'vimlab/split-term.vim'
         Plug 'plasticboy/vim-markdown', { 'for': 'markdown' }
+        if executable('fzf')
+            Plug '/usr/bin/fzf'
+        else
+            Plug 'junegunn/fzf', { 'dir': s:base.'/fzf', 'do': './install --all' }
+        endif
     else
         Plug 'ctrlpvim/ctrlp.vim'
         Plug 'mattn/ctrlp-filer'
@@ -157,6 +160,8 @@ set titlestring=%M%{has('nvim')?'nvim':(has('gui_running')?'gvim':'vim')}%{strle
 set statusline=\ %M%n.%v.%l\ %{printf('')}\ %{exists('g:debug')&&g:debug==1?'color:'.synIDattr(synID(line('.'),col('.'),1),'name'):''}%=%{strlen(expand('%:f'))?expand('%:t'):'\ -\ '}\  
 if has('nvim')
     set noshowmode
+else
+    set termwinkey=<A-w>
 endif
 
 let s:tmpdir = s:base.'/'.s:app.'/tmp'
@@ -182,6 +187,7 @@ endif
 " keymaps {{{1
 let mapleader = "\<Space>"
 noremap <Space> <Nop>
+noremap <Space><Space> :pwd<CR>
 " normal/visual mode > moving
 noremap j gj
 noremap k gk
@@ -208,8 +214,11 @@ vnoremap <C-Up> "zdd<Up>"zP
 vnoremap <C-Down> "zdd"zp
 " normal/visual mode > window/buffer
 nnoremap <Tab> <C-w>w
+nnoremap <C-l> <C-w>w
 nnoremap <S-Tab> <C-w>W
 nnoremap <BackSpace> <C-w>W
+nnoremap <Delete> <C-w>W
+nnoremap <C-h> <C-w>W
 nnoremap <silent> <C-a> :<C-u>bn<CR>
 nnoremap <silent> <C-x> :<C-u>bp<CR>
 " normal/visual mode > other
@@ -218,6 +227,7 @@ noremap + <C-a>
 noremap - <C-x>
 vnoremap < <gv
 vnoremap > >gv
+nnoremap gl <C-l>
 " in insert mode
 inoremap jj <ESC>
 inoremap <C-Backspace> <ESC>ciw
@@ -287,6 +297,47 @@ fun! FoldTextCustom()
     return line . expansionString . foldSizeStr . foldLevelStr
 endfun
 set foldtext=FoldTextCustom()
+"}}}2
+
+" rename terminal buffer name {{{2
+fun! s:renameTermBuffer()
+    if has('nvim') && exists('b:term_title') && exists('b:terminal_job_pid')
+        execute ":keepalt file term" . "/" . b:term_title . '/ t' . b:terminal_job_pid
+    endif
+endfun
+aug RenameTermBuffer
+    au!
+    au BufLeave * call s:renameTermBuffer()
+aug END
+"}}}2
+
+" set terminal filetype {{{2
+fun! s:bufnew()
+    if &buftype == "terminal" && &filetype == ""
+        set filetype=terminal
+    endif
+endfun
+aug FTTerminal
+    au!
+    au BufNew * call timer_start(0, { -> s:bufnew() })
+aug END
+"}}}2
+
+" define command to regist vim commands/functions output {{{2
+com! -nargs=* -complete=command Record
+    \ redir @*
+    \ | execute <q-args>
+    \ | redir END
+"}}}2
+
+" settings for netrw {{{2
+let g:netrw_banner = 0
+let g:netrw_liststyle = 3
+let g:netrw_browse_split = 4
+let g:netrw_altv = 1
+let g:netrw_winsize = -30
+nnoremap <Space>/ :Vexplore<CR>
+nnoremap <Space>~ :Vexplore ~/<CR>
 "}}}2
 "}}}1
 
@@ -512,15 +563,20 @@ if IsPlugged('vim-operator-surround')
     nmap er <Plug>(operator-surround-replace)
 endif
 
-if IsPlugged('deoplete.vim')
+if IsPlugged('deoplete.nvim')
     call deoplete#enable()
     let g:deoplete#auto_complete_delay = 0
     let g:deoplete#auto_complete_start_length = 1
     let g:deoplete#max_list = 10000
     let g:deoplete#omni_patterns = {}
     set completeopt-=preview
-    if IsPlugged('neco-vim')
-        let g:necovim#complete_functions.Ref = 'ref#complete'
+    if IsPlugged('neco-syntax')
+        if !exists('g:necovim#completefunctions')
+            let g:necovim#complete_functions = {}
+        endif
+        if IsPlugged('neco-vim')
+            let g:necovim#complete_functions.Ref = 'ref#complete'
+        endif
     endif
     if IsPlugged('deoplete-jedi')
         let g:deoplete#sources#jedi#python_path = g:python3_host_prog
@@ -546,7 +602,6 @@ let g:user_emmet_codepretty_key        = '<C-e>c'
 "}}}2
 
 " language support, appearance {{{2
-" for tcomment_vim
 let g:tcomment_mapleader1 = '<C-/>'
 let g:tcomment_mapleader2 = '<C-/>'
 
@@ -554,6 +609,15 @@ let g:polyglot_disabled = ['markdown']
 let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_override_foldtext = 0
 let g:vim_markdown_conceal = 0
+
+let g:LanguageClient_serverCommands = {
+    \ 'haskell': ['hie-wrapper', '--lsp'],
+    \ }
+let g:LanguageClient_rootMarkers = { 
+    \ 'haskell': ['stack.yaml'],
+    \ 'python':  ['Pipfile'],
+    \ }
+nnoremap <silent> <F5> :call LanguageClient_contextMenu()<CR>
 
 if IsPlugged('nim.vim')
     fun! JumpToDef()
@@ -567,6 +631,7 @@ endif
 
 " for ale
 let g:ale_linters = { 'haskell': [ 'stack-ghc-mod', 'hlint' ] }
+" let g:ale_linters = { 'haskell': [] }
 
 " for indentLine
 let g:indentLine_char = '|'
@@ -588,6 +653,10 @@ if IsPlugged('vim-quickrun')
         nnoremap <silent><C-F9> <C-u>:QuickRun --runner wandbox<CR>
     endif
 endif
+
+" for winresizer
+let g:winresizer_vert_resize  = 2
+let g:winresizer_horiz_resize = 2
 
 " for quickrun
 let g:quickrun_config = get(g:, 'quickrun_config', {})
@@ -611,7 +680,7 @@ if IsPlugged('denite.nvim')
     nnoremap <silent> <Leader>g  :<C-u>Denite grep<CR>
     nnoremap <silent> <Leader>h  :<C-u>Denite history<CR>
     nnoremap <silent> <Leader>m  :<C-u>Denite file/old<CR>
-    nnoremap <silent> <Leader>p  :<C-u>Denite project<CR>
+    " nnoremap <silent> <Leader>p  :<C-u>Denite project<CR>
     nnoremap <silent> <Leader>q  :<C-u>Denite quickfix<CR>
     nnoremap <silent> <Leader>ss :<C-u>Denite line<CR>
     nnoremap <silent> <Leader>sw :<C-u>DeniteWithCursorWord line<CR>
@@ -868,6 +937,12 @@ if IsPlugged('onedark.vim')
         au ColorScheme * call onedark#set_highlight('StorageClass', {
             \ 'fg': g:onedark#colors.purple })
         au ColorScheme * call onedark#set_highlight('StatusLineNC', {
+            \ 'fg': g:onedark#colors.comment_grey,
+            \ 'bg': g:onedark#colors.cursor_grey })
+        au ColorScheme * call onedark#set_highlight('StatusLineTerm', {
+            \ 'fg': g:onedark#colors.white,
+            \ 'bg': g:onedark#colors.cursor_grey })
+        au ColorScheme * call onedark#set_highlight('StatusLineTermNC', {
             \ 'fg': g:onedark#colors.comment_grey,
             \ 'bg': g:onedark#colors.cursor_grey })
         au ColorScheme * call onedark#set_highlight('TablineSel', {
