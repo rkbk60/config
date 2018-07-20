@@ -48,7 +48,7 @@ if functions -q fisher
         als bdi 'bd -i'
         als bds 'bd -s'
     end
-    if functions -q fzf
+    if type -q fzf
         set -x FZF_DEFAULT_OPTS '--height 60% --reverse --border'
         set -x FILTER 'fzf'
         als f 'fzf'
@@ -57,6 +57,17 @@ if functions -q fisher
         end
         function fkill
             ps -e | fzf | string replace -r '^(\d{1,}).*' 'kill -9 $1' | source
+        end
+        function var -a prompt
+            if test -z $prompt
+                error "Error: 'var' command requires identifer string."
+                return 1
+            end
+            echo echo -n ( \
+                set -n \
+                | fzf --prompt="$prompt: " \
+                | string replace -r '^(.*)$' '$$$1'\
+            ) | source
         end
     end
 end
@@ -69,13 +80,13 @@ if type -q nvim
     end
 end
 if type -q rg
-    function rf -a arg
+    function rf -a arg -w rg
         rg . --files -g $arg
     end
 end
 if type -q su
-    function fisu
-        /bin/su --shell=/usr/bin/fish $argv
+    function fisu -w su
+        su --shell=/usr/bin/fish $argv
     end
 end
 functions -e als
@@ -92,25 +103,25 @@ if begin status is-interactive; and functions -q set_onedark; end
     else if string match -q 'eterm-*' $TERM
         function fish_title; true; end
     end
-    # set_onedark $od_option
-    function onedark
-        set_onedark_color black     262626 default
-        set_onedark_color red       ff5f87 204
-        set_onedark_color green     87d787 114
-        set_onedark_color yellow    d7af87 180
-        set_onedark_color blue      00afff 39
-        set_onedark_color magenta   d75fd7 170
-        set_onedark_color cyan      5fafd7 74
-        set_onedark_color white     afafaf 145
-        set_onedark_color brblack   5f5f5f 59
-        set_onedark_color brred     ff5f87 default
-        set_onedark_color brgreen   87d787 default
-        set_onedark_color bryellow  d7af87 default
-        set_onedark_color brblue    00afff default
-        set_onedark_color brmagenta d75fd7 default
-        set_onedark_color brcyan    5fafd7 74
-        set_onedark -b -256
+    function onedark -w set_onedark
+        set_onedark_color black     default default
+        set_onedark_color red       ff5f87  204
+        set_onedark_color green     87d787  114
+        set_onedark_color yellow    d7af87  180
+        set_onedark_color blue      00afff  39
+        set_onedark_color magenta   d75fd7  170
+        set_onedark_color cyan      5fafd7  74
+        set_onedark_color white     default 145
+        set_onedark_color brblack   default 59
+        set_onedark_color brred     default default
+        set_onedark_color brgreen   default default
+        set_onedark_color bryellow  default default
+        set_onedark_color brblue    default default
+        set_onedark_color brmagenta default default
+        set_onedark_color brcyan    default 74
+        set_onedark $argv
     end
+    onedark $od_option
 end
 #}}}1
 

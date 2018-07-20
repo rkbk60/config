@@ -1,0 +1,57 @@
+--[[
+* based on https://github.com/edc/fish-bd
+* option(opt) reference:
+    - c: classic
+    - i: interactive
+    - n: number to back (not implemented in original)
+    - s: sensitive
+--]]
+function bd(str, opt)
+    local oldpwd = nyagos.eval("pwd")
+    local newpwd = oldpwd
+    local div = share.completion_slash and "/" or "\\"
+
+    local function string:split(div)
+        local div, fields = div or ",", {}
+        local pattern = string.format("([^%s]+)", div)
+        self:gsub(pattern, function(c) fields[#fields + 1] = c end)
+        return fields
+    end
+
+    if opt == "i" then
+        local t = oldpwd:split(div)
+        local n = #t
+        for i = 1, n - 1 do
+            if str:lower():gmatch(t[i]:lower()..".*") then
+                n = i
+                break
+            end
+        end
+        newpwd = table.concat(t, div, 1, n)
+    elseif opt == "n" then
+        if not string.gmatch(tostring(str), "%d*") then
+            nyagos.write("Invalid argument.")
+            return
+        end
+        local t = oldpwd:split(div)
+        newpwd = table.concat(t, div, 1, math.min(#t, tonumber(str)))
+    elseif opt == "c" then
+        local d = div
+        newpwd = oldpwd:gsub("(.*"..div..str..div..").*", "%1") or oldpwd
+    elseif opt == "s" then
+        local d = div
+        newpwd = oldpwd:gsub(
+            "(.*"..d.."[^"..d.."]+"..str.."[^"..d.."]*"..d..").*", "%1") or oldpwd
+    else
+        nyagos.exec("echo " .. oldpwd:gsub("(.*"..div..str..div..").*", "%1"))
+        nyagos.exec("cd ..")
+        return
+    end
+    if newpwd == oldpwd then
+        nyagos.exec("echo 'No such occurence.'")
+    else
+        nyagos.exec("echo " .. newpwd)
+        nyagos.exec("cd " .. newpwd)
+    end
+end
+-- vim: set ft=lua: --
