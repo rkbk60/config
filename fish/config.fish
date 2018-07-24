@@ -104,21 +104,24 @@ if begin status is-interactive; and functions -q set_onedark; end
         function fish_title; true; end
     end
     function onedark -w set_onedark
-        set_onedark_color black     default default
-        set_onedark_color red       ff5f87  204
-        set_onedark_color green     87d787  114
-        set_onedark_color yellow    d7af87  180
-        set_onedark_color blue      00afff  39
-        set_onedark_color magenta   d75fd7  170
-        set_onedark_color cyan      5fafd7  74
+        test "$TERM" = "linux"
+            and set_onedark_color black 000000  16
+            or  set_onedark_color black default default
+        set_onedark_color red       e06c75  204
+        set_onedark_color green     98c379  114
+        set_onedark_color yellow    default 173
+        set_onedark_color blue      61afef  75
+        set_onedark_color magenta   c678dd  170
+        set_onedark_color cyan      56b6c2  80
         set_onedark_color white     default 145
         set_onedark_color brblack   default 59
         set_onedark_color brred     default default
         set_onedark_color brgreen   default default
-        set_onedark_color bryellow  default default
-        set_onedark_color brblue    default default
+        set_onedark_color bryellow  default 186
+        set_onedark_color brblue    default 75
         set_onedark_color brmagenta default default
-        set_onedark_color brcyan    default 74
+        set_onedark_color brcyan    default 80
+        set_onedark_color brwhite   default default
         set_onedark $argv
     end
     onedark $od_option

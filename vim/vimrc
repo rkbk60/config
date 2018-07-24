@@ -6,18 +6,26 @@ language C
 let s:here = fnamemodify(resolve(expand('<sfile>:p')), ':h')
 let s:base = substitute(s:here, 'vim', '.data', 'g')
 let s:app  = has('nvim') ? 'nvim' : 'vim'
+let g:dotfiles = substitute(s:here, 'vim', '', 'g')
+
+fun! Dummy(...)
+endfun
 
 fun! IsPlugged(name)
     return exists('g:plugs') && has_key(g:plugs, a:name) && isdirectory(g:plugs[a:name].dir)
 endfun
 
 fun! Whereis(command)
-    if !executable(a:command)
-        return ""
+    let cmd = has('win32') ? 'where ' : 'which '
+    return executable(a:command)
+        \ ? substitute(system(cmd.a:command), '\v[\r\n]*', '', 'g')
+        \ : ""
+endfun
+
+fun! SafeSet(option, value)
+    if has(a:option)
+        exec 'set '.a:option."=".a:value
     endif
-    let result = system((has('win32') ? 'where ' : 'which ').a:command)
-    let trimed = substitute(result, '\v[\r\n]*', '', 'g')
-    return trimed
 endfun
 "}}}1
 
@@ -25,12 +33,13 @@ endfun
 let s:vimplug = s:base.'/vim/autoload/plug.vim'
 let s:plugins = s:base.'/'.s:app.'/plugged'
 
-if empty(glob(s:vimplug))
+if empty(glob(s:vimplug)) && executable('git')
     " Install vim-plug
     let s:vimplug_url = 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
     if has('unix')
         exec 'silent !curl -fLo '.s:vimplug.' --create-dirs '.s:vimplug_url
-    " else
+    else
+        " NOTE: following script is not working
     "     let s:vimplug_win = substitute(s:vimplug, '/', '\\', 'g')
     "     call mkdir(fnamemodify(s:vimplug_win, ':h'), 'p')
     "     let s:cmd = &shell
@@ -65,10 +74,12 @@ if filereadable(s:vimplug)
     Plug 'tpope/vim-fugitive'
     Plug 'Yggdroot/indentLine'
     Plug 'mattn/emmet-vim', { 'for': ['css', 'html', 'markdown', 'svg', 'xml'] }
+    Plug 'alvan/vim-closetag', { 'for': ['html', 'markdown', 'svg', 'xml'] }
     Plug 'tyru/eskk.vim'
     Plug 'fuenor/im_control.vim'
     Plug 'simeji/winresizer'
-    Plug 'tpope/vim-vinegar'
+    Plug 'ryanoasis/vim-devicons'
+    Plug 'scrooloose/nerdtree'
     if has('nvim')
         let g:python_host_prog  = Whereis('python2')
         let g:python3_host_prog = Whereis('python3')
@@ -109,7 +120,6 @@ if filereadable(s:vimplug)
         Plug 'mattn/ctrlp-register'
     endif
     if has('unix') && has('python3')
-        " NOTE: Failed to install when using python3.7 in system.
         " TODO: Check github, and uncomment following command.
         " Plug 'nixprime/cpsm', { 'do': 'bash install.sh' }
     endif
@@ -200,14 +210,16 @@ endif
 "}}}1
 
 " keymaps {{{1
-let mapleader = ","
-noremap <Space><Space> :pwd<CR>
+let g:mapleader = ","
+nnoremap <Space><Space> :<C-u>pwd<CR>
 " normal/visual mode > moving
 noremap j gj
 noremap k gk
 noremap gj j
 noremap gk k
 noremap q $
+noremap t <Nop>
+noremap T <Nop>
 noremap <Up> gk
 noremap <Down> gj
 noremap <A-Up> <C-b>
@@ -261,8 +273,35 @@ cnoremap <C-d> <Del>
 tnoremap <S-Space> <Space>
 "}}}1
 
-" settings unrelated to plugins {{{1
+" commands {{{1
+" command to regist vim commands/functions output to "*
+com! -nargs=* -complete=command Record
+    \ redir @*
+    \ | execute <q-args>
+    \ | redir END
+
+" reload vimrc/gvimrc
+if !exists('g:loaded_reloader')
+    fun! s:reload_vimrc()
+        exec 'source '.s:here.'/vimrc'
+        if filereadable(s:here.'/gvimrc') && (has('gui_running') || exists('g:GuiLoaded'))
+            exec 'source '.s:here.'/gvimrc'
+        endif
+    endfun
+    com! Reload call s:reload_vimrc()
+    let g:loaded_reloader = 1
+endif
+"}}}1
+
+" other settings unrelated to plugins {{{1
 let g:vim_indent_cont = &tabstop
+
+" keymap/command related dotfiles {{{2
+if isdirectory(g:dotfiles)
+    exec 'nnoremap <Space>. :<C-u>cd '.g:dotfiles.'<CR>'
+    exec 'nnoremap t. :<C-u>Vexplore '.g:dotfiles.'<CR>'
+endif
+"}}}2
 
 " custom tabline {{{2
 fun! GitInfo()
@@ -281,13 +320,38 @@ endfun
 set tabline=\ %M%{tabpagenr()}.%n%{strlen(expand('%:f'))?'\ '.expand('%:t'):''}%=%{ImeInfo()}%{GitInfo()}%{&ff=='unix'?'':'CRLF\ '}%{&fenc==#'utf-8'?'':'Enc:'.&fenc.'\ '}%{strlen(&ft)?&ft:'plain'}:%L\  
 "}}}2
 
+" netrw settings to use like NERDTree {{{2
+" let g:netrw_nogx = 1 " is defined on previm settings
+let g:netrw_banner = 0
+let g:netrw_liststyle = 3
+let g:netrw_browse_split = 4
+let g:netrw_altv = 1
+let g:netrw_winsize = -30
+let g:Netrw_UserMaps = [
+    \ ['<leftmouse>',   'Dummy'],
+    \ ['<2-leftmouse>', 'Dummy'],
+    \ ['<s-leftmouse>', 'Dummy'],
+    \ ['<middlemouse>', 'Dummy'],
+    \ ['<rightmouse>',  'Dummy'],
+    \ ]
+aug NetrwCommandKeymap
+    au!
+    au FileType netrw noremap <silent> <buffer> H  <F1>:h netrw-quickmap<CR>
+    au FileType netrw noremap <silent> <buffer> qq :<C-u>bd<CR>
+    au FileType netrw noremap <silent> <buffer> Q  :<C-u>bd<CR>
+aug END
+nnoremap tt :<C-u>Vexplore ./<CR>
+nnoremap t~ :<C-u>Vexplore ~/<CR>
+nnoremap TT :<C-u>Vexplore %:h/<CR>
+"}}}2
+
 " correlate some extentions to filetypes {{{2
 aug ExtendExtentions
     au!
     " for markdown
     au BufNewFile,BufRead *.{md,mdwn,mkd,mkdn,mark*} set ft=markdown
     " for Nyagos script
-    au BufNewfile,BufRead *.{luash} set ft=lua
+    au BufNewfile,BufRead *.luash set ft=lua
     au BufNewfile,BufRead .nyagos set ft=lua
 aug END
 "}}}2
@@ -311,7 +375,7 @@ fun! FoldTextCustom()
     let foldSizeStr = " " . foldSize . " lines "
     let foldLevelStr = repeat("==", v:foldlevel)
     let lineCount = line("$")
-    let expansionString = repeat(" ", w - strwidth(foldSizeStr.line.foldLevelStr))
+    let expansionString = repeat(" ", w - strwidth(foldSizeStr.line.foldLevelStr) - 1)
     return line . expansionString . foldSizeStr . foldLevelStr
 endfun
 set foldtext=FoldTextCustom()
@@ -339,36 +403,6 @@ aug FTTerminal
     au!
     au BufNew * call timer_start(0, { -> s:bufnew() })
 aug END
-"}}}2
-
-" netrw settings to use like NERDTree {{{2
-let g:netrw_banner = 0
-let g:netrw_liststyle = 3
-let g:netrw_browse_split = 4
-let g:netrw_altv = 1
-let g:netrw_winsize = -30
-nnoremap <Space>/ :Vexplore<CR>
-nnoremap <Space>~ :Vexplore ~/<CR>
-"}}}2
-
-" command to regist vim commands/functions output to "* {{{2
-com! -nargs=* -complete=command Record
-    \ redir @*
-    \ | execute <q-args>
-    \ | redir END
-"}}}2
-
-" command to reload vimrc/gvimrc {{{2
-if !exists('g:loaded_reloader')
-    fun! s:reload_vimrc()
-        exec 'source ' . s:here . '/vimrc'
-        if has('gui_running') || exists('g:GuiLoaded')
-            exec 'source ' . s:here . '/gvimrc'
-        endif
-    endfun
-    com! Reload call s:reload_vimrc()
-    let g:loaded_reloader = 1
-endif
 "}}}2
 "}}}1
 
@@ -625,6 +659,12 @@ let g:user_emmet_anchorizeurl_key      = '<C-e>a'
 let g:user_emmet_anchorizesummary_key  = '<C-e>A'
 let g:user_emmet_mergelines_key        = '<C-e>m'
 let g:user_emmet_codepretty_key        = '<C-e>c'
+
+" for vim-closetag
+let g:closetag_filenames = '*'
+let g:closetag_emptyTags_caseSensitive = 0
+let g:closetag_shortcut = '>>'
+let g:closetag_close_shortcut = '/>'
 "}}}2
 
 " language support, appearance {{{2
@@ -632,9 +672,12 @@ let g:tcomment_mapleader1 = '<C-/>'
 let g:tcomment_mapleader2 = '<C-/>'
 
 let g:polyglot_disabled = ['markdown']
-let g:vim_markdown_folding_disabled = 1
-let g:vim_markdown_override_foldtext = 0
-let g:vim_markdown_conceal = 0
+
+if IsPlugged('vim-markdown')
+    let g:vim_markdown_folding_disabled = 1
+    let g:vim_markdown_override_foldtext = 0
+    let g:vim_markdown_conceal = 0
+endif
 
 let g:LanguageClient_serverCommands = {
     \ 'haskell': ['hie-wrapper', '--lsp'],
@@ -643,7 +686,7 @@ let g:LanguageClient_rootMarkers = {
     \ 'haskell': ['stack.yaml'],
     \ 'python':  ['Pipfile'],
     \ }
-nnoremap <silent> <F5> :call LanguageClient_contextMenu()<CR>
+nnoremap <silent> <F5> :<C-u>call LanguageClient_contextMenu()<CR>
 
 if IsPlugged('nim.vim')
     fun! JumpToDef()
@@ -651,12 +694,21 @@ if IsPlugged('nim.vim')
             call GotoDefinition_{&filetype}()
         endif
     endfun
-    noremap <M-g> :call JumpToDef()<CR>
+    noremap <M-g> :<C-u>call JumpToDef()<CR>
     inoremap <M-g> <Esc>:call JumpTodDef()<CR>wi
 endif
 
-" for ale
-let g:ale_linters = { 'haskell': [ 'stack-ghc-mod', 'hlint' ] }
+if IsPlugged('ale')
+    let g:ale_echo_msg_format = '[%linter%]%s'
+    let g:ale_linters = { 
+        \ 'gitcommit': [ 'write-good' ],
+        \ 'haskell': [ 'stack-ghc-mod', 'hlint' ],
+        \ }
+    if IsPlugged('lightline-ale')
+        let g:lightline#ale#indicator_error    = 'E:'
+        let g:lightline#ale#indicator_warnings = 'W:'
+    endif
+endif
 
 " for indentLine
 let g:indentLine_char = '|'
@@ -679,6 +731,20 @@ if IsPlugged('vim-quickrun')
     endif
 endif
 
+if IsPlugged('vim-devicons')
+    com! UseDevicons  call ToggleDevicons(1)
+    com! HideDevicons call ToggleDevicons(0)
+    fun! ToggleDevicons(value)
+        let g:webdevicons_enable = a:value
+        if exists('g:loaded_webdevicons')
+            silent call webdevicons#refresh()
+        endif
+    endfun
+    if !exists('g:loaded_webdevicons')
+        silent HideDevicons
+    endif
+endif
+
 " for winresizer
 let g:winresizer_vert_resize  = 2
 let g:winresizer_horiz_resize = 2
@@ -697,22 +763,22 @@ let g:quickrun_config._ = {
 
 " launchers {{{2
 if IsPlugged('denite.nvim')
-    " denite settings {{{3
-    " - Define keymaps to run denite command {{{4
+" denite settings {{{3
+    " Define keymaps to run denite command {{{4
+    nnoremap          <Space>,  :<C-u>Denite
     nnoremap <silent> <Space>b  :<C-u>Denite buffer<CR>
     nnoremap <silent> <Space>B  :<C-u>Denite buffer -buffer-name=file<CR>
     nnoremap <silent> <Space>f  :<C-u>Denite file/rec<CR>
     nnoremap <silent> <Space>g  :<C-u>Denite grep<CR>
     nnoremap <silent> <Space>h  :<C-u>Denite history<CR>
     nnoremap <silent> <Space>m  :<C-u>Denite file/old<CR>
-    " nnoremap <silent> <Space>p  :<C-u>Denite project<CR>
-    nnoremap <silent> <Space>q  :<C-u>Denite quickfix<CR>
+    nnoremap <silent> <Space>p  :<C-u>Denite file/rec/git<CR>
     nnoremap <silent> <Space>ss :<C-u>Denite line<CR>
     nnoremap <silent> <Space>sw :<C-u>DeniteWithCursorWord line<CR>
     nnoremap <silent> <Space>y  :<C-u>Denite neoyank<CR>
     "}}}4
 
-    " - Change mappings on denite {{{4
+    " Change mappings on denite {{{4
     call denite#custom#map('insert', '<C-j>', '<denite:move_to_next_line>', 'noremap')
     call denite#custom#map('insert', '<C-k>', '<denite:move_to_previous_line>', 'noremap')
     call denite#custom#map('insert', '<C-a>', '<Home>')
@@ -721,19 +787,21 @@ if IsPlugged('denite.nvim')
     call denite#custom#map('insert', '<C-b>', '<Left>')
     "}}}4
 
-    " - Change search options {{{4
-    " Change matchers
+    " Change search options {{{4
+    " - Change matchers
     call denite#custom#source(
-        \ 'file_mru', 'matchers', ['matcher/fuzzy', 'matcher/project_files'])
-    call denite#custom#source(
-        \ 'file/rec', 'matchers', ['matcher/cpsm'])
+        \ 'file/old', 'matchers', ['matcher/fuzzy', 'matcher/project_files'])
+    if IsPlugged('cpsm')
+        call denite#custom#source(
+            \ 'file/rec', 'matchers', ['matcher/cpsm'])
+    endif
 
-    " Change sorters.
+    " - Change sorters.
     call denite#custom#source(
         \ 'file/rec', 'sorters', ['sorter/sublime'])
     "}}}4
 
-    " - Add custom menus {{{4
+    " Add custom menus {{{4
     let s:menus = {}
     let s:menus.fish = {
         \ 'description': 'Edit your import fish configuration'
@@ -744,7 +812,7 @@ if IsPlugged('denite.nvim')
     call denite#custom#var('menu', 'menus', s:menus)
     "}}}4
 
-    " - Add alt-grep commands {{{4
+    " Add alt-grep commands {{{4
     if executable('rg')
         call denite#custom#var('file/rec', 'command',
             \ ['rg', '--files', '--glob', '!.git'])
@@ -776,9 +844,7 @@ if IsPlugged('denite.nvim')
         call denite#custom#var('grep', 'pattern_opt', [])
         call denite#custom#var('grep', 'separator', ['--'])
         call denite#custom#var('grep', 'final_opts', [])
-    endif
-
-    if executable('ack')
+    elseif executable('ack')
         call denite#custom#var('grep', 'command', ['ack'])
         call denite#custom#var('grep', 'default_opts',
             \ ['--ackrc', $HOME.'/.ackrc', '-H',
@@ -790,16 +856,16 @@ if IsPlugged('denite.nvim')
     endif
     "}}}4
 
-    " - Define alias {{{4
+    " Define alias {{{4
     call denite#custom#alias('source', 'file/rec/git', 'file/rec')
     call denite#custom#var('file/rec/git', 'command',
         \ ['git', 'ls-files', '-co', '--exclude-standard'])
 
     call denite#custom#alias('source', 'file/rec/py', 'file/rec')
-    call denite#custom#var('file/rec/py', 'command',['scantree.py'])
+    call denite#custom#var('file/rec/py', 'command', ['scantree.py'])
     "}}}4
 
-    " - Change appearance {{{4
+    " Change appearance {{{4
     hi link DeniteMatchedChar Search
     hi link DeniteSearch Search
     call denite#custom#option('default', {
@@ -815,24 +881,26 @@ if IsPlugged('denite.nvim')
     endif
     "}}}4
 
-    " - Change ignore_globs {{{4
+    " Change ignore_globs {{{4
     call denite#custom#filter('matcher/ignore_globs', 'ignore_globs',
         \ [ '.git/', '.ropeproject/', '__pycache__/',
-        \   'venv/', 'images/', '*.min.*', 'img/', 'fonts/'])
+        \   'venv/', 'images/', '*.min.*', 'img/', 'fonts/',
+        \   '*.exe', '*.jpg', '*.jpeg', '*.png', '*~', '*.bak' ])
     "}}}4
-    "}}}4
-    "}}}3
+"}}}3
 elseif IsPlugged('ctrlp.vim')
-    " ctrlp settings {{{3
+" ctrlp settings {{{3
     let g:ctrlp_map = '<Nop>'
+    nnoremap <silent> <Space>, :<C-u>CtrlP
     nnoremap <silent> <Space>b :<C-u>CtrlPBuffer<CR>
     nnoremap <silent> <Space>f :<C-u>CtrlPFiler<CR>
+    nnoremap <silent> <Space>F :<C-u>CtrlP<CR>
     nnoremap <silent> <Space>m :<C-u>CtrlPMRU<CR>
-    nnoremap <silent> <Space>q :<C-u>CtrlPQuickfix<CR>
     nnoremap <silent> <Space>u :<C-u>CtrlPUndo<CR>
     nnoremap <silent> <Space>y :<C-u>CtrlPRegister<CR>
+    let g:ctrlp_max_depth = 4
     let g:ctrlp_lazy_update = 100
-    let g:ctrlp_types = ['buf', 'mru', 'fil', 'quickfix', 'undo', 'register']
+    let g:ctrlp_types = ['buf', 'mru', 'fil', 'undo', 'register']
     let g:ctrlp_open_muliple_files = 'ij'
     let g:ctrlp_cache_dir = s:base.'/'.s:app.'/ctrlp_cache'
     let g:ctrlp_custom_ignore = {
@@ -868,58 +936,35 @@ fun! CustomLightlineMode()
 endfun
 let g:lightline = {
       \   'active': {
-      \     'left': [ [ 'mode', 'paste' ], [ 'filename', 'linter_errors', 'linter_warnings', 'modified' ] ],
+      \     'left': [ [ 'mode', 'paste' ], [ 'linter_warnings', 'linter_errors', 'filename', 'modified' ] ],
       \     'right': [ [ 'lineinfo' ] ]
       \   },
       \   'inactive': {
       \     'left': [ [ 'fnamewithbufnum' ] ],
       \     'right': [ [ 'lineinfo' ] ]
       \   },
-      \   'tabline': {
-      \     'left': [[ 'buffer_before', 'buffer_current', 'buffer_after' ]],
-      \     'right': [ [], [ 'git_branch', 'fileinfo' ] ]
-      \   },
-      \   'tab': {
-      \     'active':   [ 'modified', 'tabnum', 'filename' ],
-      \     'inactive': [ 'modified', 'tabnum', 'filename' ]
-      \   },
       \   'component': {
-      \     'absolutepath': '%F', 'relativepath': '%f', 'filename': '%t', 'modified': '%M', 'bufnum': '%n',
-      \     'paste': '%{&paste?"PASTE":""}', 'readonly': '%R', 'charvalue': '%b', 'charvaluehex': '%B',
-      \     'spell': '%{&spell?&spelllang:""}', 'fileencoding': '%{&fenc==#"utf-8"?"":&fenc!=#""?&fenc:&enc}',
-      \     'filetype': '%{&ft!=#""?&ft:"plain"}', 'percent': '%3p%%', 'percentwin': '%P',
-      \     'lineinfo': '%3l:%-2v', 'line': '%l', 'column': '%c', 'winnr': '%{winnr()}',
-      \     'fileformat': '%{&ff==#"unix"?"":&ff==#"dos"?"CRLF":&enc}',
-      \     'separator': '', 'totalline': '%L', 
-      \     'fileinfo': '%{&fenc==#"utf-8"?"":&fenc!=#""?&fenc:&enc} %{&ff==#"unix"?"":&ff==#"dos"?"CRLF":&enc} %{&ft!=#""?&ft:"plain"}:%L',
-      \     'fnamewithbufnum': '%n %t'
+      \     'filename': '%t', 'modified': '%M', 'fnamewithbufnum': '%n %t',
+      \     'paste': '%{&paste?"PASTE":""}', 'readonly': '%R', 'lineinfo': '%3l:%-2v',
       \   },
       \   'component_visible_condition': {
-      \     'modified': '&modified||!&modifiable', 'readonly': '&readonly', 'paste': '&paste', 'spell': '&spell'
+      \     'modified': '&modified||!&modifiable', 'readonly': '&readonly', 'paste': '&paste',
       \   },
       \   'component_function': {
-      \     'buffer_info': 'lightline#buffer#bufferinfo',
-      \     'git_branch': 'fugitive#head',
       \     'mode': 'CustomLightlineMode'
       \   },
       \   'component_expand': {
-      \     'tabs': 'lightline#tabs',
-      \     'buffer_current': 'lightline#buffer#buffercurrent',
-      \     'buffer_before': 'lightline#buffer#bufferbefore',
-      \     'buffer_after': 'lightline#buffer#bufferafter',
       \     'linter_warnings': 'lightline#ale#warnings',
       \     'linter_errors': 'lightline#ale#errors',
       \   },
       \   'component_type': {
-      \     'tabs': 'tabsel', 'close': 'raw',
       \     'linter_warnings': 'warning', 'linter_errors': 'error',
-      \     'buffer_current': 'tabsel', 'buffer_before': 'raw', 'buffer_after': 'raw',
       \   },
       \   'tab_component_function': {
-      \     'filename': 'lightline#tab#filename', 'modified': 'lightline#tab#modified',
-      \     'readonly': 'lightline#tab#readonly', 'tabnum': 'lightline#tab#tabnum',
+      \     'filename': 'lightline#tab#filename',
+      \     'modified': 'lightline#tab#modified',
+      \     'readonly': 'lightline#tab#readonly',
       \   },
-      \   'colorscheme': 'default',
       \   'mode_map': {
       \     'n': 'Normal', 'i': 'Insert', 'R': 'Replace', 'v': 'Visual', 'V': 'V-Line', "\<C-v>": 'V-Block',
       \     'c': 'Command', 's': 'Select', 'S': 'S-Line', "\<C-s>": 'S-Block', 't': 'Terminal',
@@ -930,13 +975,13 @@ let g:lightline = {
       \     'c': 'command', 's': 'select', 'S': 'select', "\<C-s>": 'select', 't': 'terminal'
       \   },
       \   'mode_fallback': { 'replace': 'insert', 'terminal': 'insert', 'select': 'visual' },
-      \   'winwidth': winwidth(0),
-      \}
+      \ }
 "}}}2
 
 "}}}1
 
 " colorscheme settings {{{1
+set background=dark
 if has('unix') && !has('nvim')
     aug ModifyVimStyle
         au!
@@ -1033,8 +1078,6 @@ if IsPlugged('onedark.vim')
         \}
 
     color onedark
-else
-    set background=dark
 endif
 "}}}1
 

@@ -1,14 +1,6 @@
 
 if has('gui_running') " for gvim
-    set guioptions-=T
-    set guioptions-=r
-    set guioptions-=R
-    set guioptions-=l
-    set guioptions-=L
-    set guioptions-=b
-    set guioptions-=e
-    set guioptions+=a
-    set guioptions-=m
+    set guioptions=gita
 
     if has('win32') " for Kaoriya vim
         silent set renderoptions=type:directx,renmode:5
@@ -17,16 +9,44 @@ if has('gui_running') " for gvim
     if has('win32')
         try
             set guifont=Cica:h9
+            if IsPlugged('vim-devicons')
+                silent UseDevicons
+            endif
         catch
             set guifont=Consolas:h9
         endtry
     else
         silent set guifont=Cica\ 9
+        if IsPlugged('vim-devicons')
+            silent UseDevicons
+        endif
     endif
 elseif exists('g:GuiLoaded') " for neovim-qt
     set termguicolors
-    silent GuiFont! Cica:h9
-    silent GuiLinespace 0
+    try
+        silent GuiFont! Cica:h9
+        silent GuiLinespace 0
+
+        " change font size with C-mousewheel
+        silent! nmap <unique> <silent> <C-ScrollWheelUp>   :<C-u>call ResizeFontSize(+1)<CR>
+        silent! nmap <unique> <silent> <C-ScrollWheelDown> :<C-u>call ResizeFontSize(-1)<CR>
+        fun! ResizeFontSize(add)
+            let current = substitute(execute('GuiFont'), '\n', '', 'g')
+            if !exists('s:keep')
+                let s:keep = [&lines, &columns]
+            endif
+            let before = substitute(current, '\v[^0-9]*(\d{1,})$', '\1', '')
+            let after = before + a:add
+            if after < 1
+                let after = 1
+            endif
+            silent exec 'GuiFont! ' . substitute(current, '\v'.before.'$', after, '')
+            let [&lines, &columns] = s:keep
+        endfun
+        " if IsPlugged('vim-devicons')
+        "     silent UseDevicons
+        " endif
+    endtry
 endif
 
 if IsPlugged('onedark.vim')

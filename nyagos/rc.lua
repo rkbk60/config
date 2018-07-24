@@ -2,17 +2,41 @@ share.setenv("HOME", nyagos.getenv("USERPROFILE"))
 
 share.completion_slash = true
 
-share.alias.cp   = "copy $*"
-share.alias.mv   = "move $*"
-share.alias.sudo = "%HOME%\\scoop\\shims\\sudo.exe $*"
-share.alias.vim  = "gvim $*"
+local dotfiles = '%HOME%\\doftiles'
+share.alias {
+    -- unix shell like aliases.
+    cp  = "copy $*",
+    mv  = "move $*",
+    rm  = "del $*",
+    ls  = "ls -c $*",
+    la  = "ls -a $*",
+    ll  = "ls -l $*",
+    cat = "type $*",
 
-share.suffix = {
-    'lua':   ['nyagos', '-f'],
-    'luash': ['nyagos', '-f']
+    -- scoop aliases like pacman.
+    Syu = 'scoop update; scoop update *',
+    Ss  = 'scoop install $*',
+    Srs = 'scoop uninstall $*',
+    Sss = 'scoop search $*',
+    Sls = 'scoop list',
+
+    -- dotfiles related commands.
+    config   = 'dotfiles nyagos\\rc.lua',
+    dotfiles = 'start.exe '..dotfiles..' bash -c "vim $*"',
+    editrc   = 'dotfiles nyagos\\rc.lua',
+
+    -- other aliases.
+    fish  = "bash -c fish",
+    pwsh  = "powershell $*",
+    vim   = "gvim $*",
 }
 
-nyagos.prompt = function(this)
+share.suffix {
+    lua   = 'nyagos -f',
+    luash = 'nyagos -f',
+}
+
+nyagos.prompt = function(_)
     local wd = nyagos.getwd()
     local env = nyagos.env
     local home = env.home or env.userprofile
@@ -23,7 +47,6 @@ nyagos.prompt = function(this)
     local code = nyagos.elevated() and 45 or 46 -- magenta/cyan
     local head = "\n$e[" .. code .. ";30;1m $e[40;37;0m "
     local prompt = wd == "~" and head or head .. wd .. head
-    
     return nyagos.default_prompt(prompt, "Nyagos: " .. wd)
 end
 
