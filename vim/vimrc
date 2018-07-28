@@ -76,10 +76,8 @@ if filereadable(s:vimplug)
     Plug 'mattn/emmet-vim', { 'for': ['css', 'html', 'markdown', 'svg', 'xml'] }
     Plug 'alvan/vim-closetag', { 'for': ['html', 'markdown', 'svg', 'xml'] }
     Plug 'tyru/eskk.vim'
-    Plug 'fuenor/im_control.vim'
     Plug 'simeji/winresizer'
     Plug 'ryanoasis/vim-devicons'
-    Plug 'scrooloose/nerdtree'
     if has('nvim')
         let g:python_host_prog  = Whereis('python2')
         let g:python3_host_prog = Whereis('python3')
@@ -118,13 +116,13 @@ if filereadable(s:vimplug)
         Plug 'ctrlpvim/ctrlp.vim'
         Plug 'mattn/ctrlp-filer'
         Plug 'mattn/ctrlp-register'
+        Plug 'thinca/vim-fontzoom'
     endif
     if has('unix') && has('python3')
         " TODO: Check github, and uncomment following command.
         " Plug 'nixprime/cpsm', { 'do': 'bash install.sh' }
-    endif
-    if !has('nvim')
-        Plug 'thinca/vim-fontzoom'
+    elseif has('unix')
+        Plug 'fuenor/im_control.vim'
     endif
     call plug#end()
 
@@ -213,20 +211,20 @@ endif
 let g:mapleader = ","
 nnoremap <Space><Space> :<C-u>pwd<CR>
 " normal/visual mode > moving
-noremap j gj
-noremap k gk
-noremap gj j
-noremap gk k
-noremap q $
-noremap t <Nop>
-noremap T <Nop>
-noremap <Up> gk
-noremap <Down> gj
-noremap <A-Up> <C-b>
-noremap <A-Down> <C-f>
-noremap <A-Left> 0
+noremap j         gj
+noremap k         gk
+noremap gj        j
+noremap gk        k
+noremap q         $
+noremap t         <Nop>
+noremap T         <Nop>
+noremap <Up>      gk
+noremap <Down>    gj
+noremap <A-Up>    <C-b>
+noremap <A-Down>  <C-f>
+noremap <A-Left>  0
 noremap <A-Right> $
-noremap <C-Left> b
+noremap <C-Left>  b
 noremap <C-Right> w
 " normal/visual mode > cut/yank/paste
 noremap x "_x
@@ -234,33 +232,32 @@ noremap X "_X
 noremap s "_s
 noremap S "_S
 nnoremap Y y$
-nnoremap <C-Up> "zdd<Up>"zP
+nnoremap <C-Up>   "zdd<Up>"zP
 nnoremap <C-Down> "zdd"zp
-vnoremap <C-Up> "zdd<Up>"zP
+vnoremap <C-Up>   "zdd<Up>"zP
 vnoremap <C-Down> "zdd"zp
 " normal/visual mode > window/buffer
-nnoremap <Tab> <C-w>w
-nnoremap <C-l> <C-w>w
-nnoremap <S-Tab> <C-w>W
+nnoremap <Tab>       <C-w>w
+nnoremap <C-l>       <C-w>w
+nnoremap <S-Tab>     <C-w>W
 nnoremap <BackSpace> <C-w>W
-nnoremap <Delete> <C-w>W
-nnoremap <C-h> <C-w>W
+nnoremap <Delete>    <C-w>W
+nnoremap <C-h>       <C-w>W
 nnoremap <silent> <C-a> :<C-u>bn<CR>
 nnoremap <silent> <C-x> :<C-u>bp<CR>
 " normal/visual mode > other
-nnoremap Q q
-noremap + <C-a>
-noremap - <C-x>
-vnoremap < <gv
-vnoremap > >gv
+nnoremap Q  q
+noremap  +  <C-a>
+noremap  -  <C-x>
+vnoremap <  <gv
+vnoremap >  >gv
 nnoremap gl <C-l>
 " in insert mode
 inoremap jj <ESC>
 inoremap <C-Backspace> <ESC>ciw
-inoremap <C-Delete> <Space><ESC>ciw
-inoremap <C-H> <ESC>ciw
-inoremap <C-;> <Delete>
-inoremap <C-+> <Space><ESC>ciw
+inoremap <C-Delete>    <Space><ESC>ciw
+inoremap <PageUp>      <Home>
+inoremap <PageDown>    <End>
 " in command mode (emulate Emacs binding)
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
@@ -585,28 +582,23 @@ if IsPlugged('eskk.vim') && filereadable(g:skk_dict)
     " }}}3
 elseif IsPlugged('im_control.vim')
     " im_control settings {{{3
-    if has('win32')
-        let IM_CtrlMode = 4
-        inoremap <silent> <C-j> <C-^><C-r>=IMState('FixMode')<CR>
-    elseif has('unix')
-        let s:has_mozc = system('ibus list-engine 2>&1 | grep -c "mozc-jp"')
-        if s:has_mozc ==# '1'
-            silent system('ibus engine "mozc-jp"')
-            let IM_CtrlMode = 1
-            inoremap <silent> <C-j> <C-r>=IMState('FixMode')<CR>
-            fun! IMCtrl(cmd)
-                if a:cmd ==# 'On'
-                    let res = system('ibus engine "mozc-jp"')
-                elseif a:cmd ==# 'Off'
-                    let res = system('ibus engine "xkb:jp::jpn"')
-                endif
-                silent set showtabline=2
-                return ''
-            endfun
-            fun! ImeInfo()
-                return printf('mozc%s ', IMStatus('(Lock)'))
-            endfun
-        endif
+    let s:has_mozc = system('ibus list-engine 2>&1 | grep -c "mozc-jp"')
+    if s:has_mozc ==# '1'
+        silent system('ibus engine "mozc-jp"')
+        let IM_CtrlMode = 1
+        inoremap <silent> <C-j> <C-r>=IMState('FixMode')<CR>
+        fun! IMCtrl(cmd)
+            if a:cmd ==# 'On'
+                let res = system('ibus engine "mozc-jp"')
+            elseif a:cmd ==# 'Off'
+                let res = system('ibus engine "xkb:jp::jpn"')
+            endif
+            silent set showtabline=2
+            return ''
+        endfun
+        fun! ImeInfo()
+            return printf('mozc%s ', IMStatus('(Lock)'))
+        endfun
     endif
     "}}}3
 endif
@@ -735,14 +727,14 @@ if IsPlugged('vim-devicons')
     com! UseDevicons  call ToggleDevicons(1)
     com! HideDevicons call ToggleDevicons(0)
     fun! ToggleDevicons(value)
-        let g:webdevicons_enable = a:value
-        if exists('g:loaded_webdevicons')
-            silent call webdevicons#refresh()
-        endif
+    "     let g:webdevicons_enable = a:value
+    "     if exists('g:loaded_webdevicons')
+    "         silent call webdevicons#refresh()
+    "     endif
     endfun
-    if !exists('g:loaded_webdevicons')
-        silent HideDevicons
-    endif
+    " if !exists('g:loaded_webdevicons')
+    "     silent HideDevicons
+    " endif
 endif
 
 " for winresizer

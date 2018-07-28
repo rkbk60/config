@@ -124,7 +124,7 @@ if begin status is-interactive; and functions -q set_onedark; end
         set_onedark_color brwhite   default default
         set_onedark $argv
     end
-    onedark $od_option
+    # onedark $od_option
 end
 #}}}1
 

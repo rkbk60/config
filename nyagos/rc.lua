@@ -15,15 +15,14 @@ share.alias {
 
     -- scoop aliases like pacman.
     Syu = 'scoop update; scoop update *',
-    Ss  = 'scoop install $*',
+    S   = 'scoop install $*',
     Srs = 'scoop uninstall $*',
-    Sss = 'scoop search $*',
+    Ss  = 'scoop search $*',
     Sls = 'scoop list',
 
     -- dotfiles related commands.
     config   = 'dotfiles nyagos\\rc.lua',
     dotfiles = 'start.exe '..dotfiles..' bash -c "vim $*"',
-    editrc   = 'dotfiles nyagos\\rc.lua',
 
     -- other aliases.
     fish  = "bash -c fish",
