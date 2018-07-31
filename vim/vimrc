@@ -77,6 +77,7 @@ if filereadable(s:vimplug)
     Plug 'alvan/vim-closetag', { 'for': ['html', 'markdown', 'svg', 'xml'] }
     Plug 'tyru/eskk.vim'
     Plug 'simeji/winresizer'
+    Plug 'cocopon/vaffle.vim'
     Plug 'ryanoasis/vim-devicons'
     if has('nvim')
         let g:python_host_prog  = Whereis('python2')
@@ -727,14 +728,15 @@ if IsPlugged('vim-devicons')
     com! UseDevicons  call ToggleDevicons(1)
     com! HideDevicons call ToggleDevicons(0)
     fun! ToggleDevicons(value)
-    "     let g:webdevicons_enable = a:value
-    "     if exists('g:loaded_webdevicons')
-    "         silent call webdevicons#refresh()
-    "     endif
+        let g:webdevicons_enable = a:value
+        let g:webdevicons_enable_nerdtree = 0
+        if exists('g:loaded_webdevicons')
+            silent call webdevicons#refresh()
+        endif
     endfun
-    " if !exists('g:loaded_webdevicons')
-    "     silent HideDevicons
-    " endif
+    if !exists('g:loaded_webdevicons')
+        silent HideDevicons
+    endif
 endif
 
 " for winresizer
