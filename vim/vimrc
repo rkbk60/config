@@ -340,7 +340,6 @@ aug NetrwCommandKeymap
 aug END
 nnoremap tt :<C-u>Vexplore ./<CR>
 nnoremap t~ :<C-u>Vexplore ~/<CR>
-nnoremap TT :<C-u>Vexplore %:h/<CR>
 "}}}2
 
 " correlate some extentions to filetypes {{{2
@@ -1039,6 +1038,8 @@ if IsPlugged('onedark.vim')
             \ 'fg': g:onedark#colors.purple })
         au ColorScheme * call onedark#set_highlight('shQuote', {
             \ 'fg': g:onedark#colors.green })
+        au ColorScheme * call onedark#set_highlight('ps1Keyword', {
+            \ 'fg': g:onedark#colors.purple })
         au ColorScheme * call onedark#set_highlight('mkdURL', {
             \ 'fg': g:onedark#colors.cyan })
         au ColorScheme * call onedark#set_highlight('DeniteMatchedChar', {
