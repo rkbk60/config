@@ -7,51 +7,8 @@
     "editor.renderWhitespace": "boundary",
     "terminal.integrated.shell.linux": "/usr/bin/fish",
 
-    "vim.hlsearch": true,
-    "vim.useCtrlKeys": true,
-    "vim.useSystemClipboard": true,
-    "vim.leader": "<Space>",
-    "vim.normalModeKeyBindings": [
-        { "before": ["q"], "after": ["$"] },
-        { "before": ["Q"], "after": ["q"] },
-        { "before": ["+"], "after": ["<C-a>"] },
-        { "before": ["-"], "after": ["<C-x>"] },
-        { "before": ["<"], "after": ["<", "h"] },
-        { "before": [">"], "after": [">", "l"] },
-    ],
-    "vim.normalModeKeyBindingsNonRecursive": [
-        { "before": ["j"], "after": ["g", "j"] },
-        { "before": ["k"], "after": ["g", "k"] },
-    ],
-    "vim.visualModeKeyBindings": [
-        { "before": ["q"], "after": ["$"] },
-        { "before": ["+"], "after": ["<C-a>"] },
-        { "before": ["-"], "after": ["<C-x>"] },
-        { "before": ["<"], "after": ["<", "g", "v"] },
-        { "before": [">"], "after": [">", "g", "v"] },
-    ],
-    "vim.insertModeKeyBindings": [
-        { "before": ["j", "j"], "after": ["<Esc>"] },
-    ],
-    "vim.statusBarColorControl": true,
-    "vim.statusBarColors": { // based on base16-monokai
-        "normal":      "#98c379", // green
-        "insert":      "#61afef", // blue
-        "replace":     "#e06c75", // red
-        "visual":      "#c678dd", // purple
-        "visualline":  "#c678dd", // purple
-        "visualblock": "#c678dd", // purple
-    },
-
     "window.menuBarVisibility": "hidden",
     "workbench.activityBar.visible": false,
     "workbench.colorTheme": "One Dark Pro",
     "workbench.startupEditor": "none",
-    "workbench.colorCustomizations": {
-        "statusBar.noFolderForeground": "#272822",
-        "statusBar.debuggingForeground": "#272822",
-        "statusBar.background": "#98c379",
-        "statusBar.noFolderBackground": "#98c379",
-        "statusBar.debuggingBackground": "#98c379"
-    },
 }
