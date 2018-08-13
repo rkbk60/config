@@ -4,11 +4,16 @@
     "editor.fontSize": 11,
     "editor.lineHeight": 13,
     "editor.lineNumbers": "relative",
+    "editor.minimap.enabled": false,
     "editor.renderWhitespace": "boundary",
+
+    "markdown.preview.fontFamily": "'Source Han Sans JP', -apple-system, BlinkMacSystemFont,  'Yu Gothic', 'HelveticaNeue-Light', 'Ubuntu', 'Droid Sans', sans-serif",
+
     "terminal.integrated.shell.linux": "/usr/bin/fish",
 
     "window.menuBarVisibility": "hidden",
+    
     "workbench.activityBar.visible": false,
-    "workbench.colorTheme": "One Dark Pro",
+    "workbench.colorTheme": "Monokai",
     "workbench.startupEditor": "none",
 }

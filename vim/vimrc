@@ -716,6 +716,10 @@ let g:previm_enable_realtime = 1
 " for split-term
 let g:disable_key_mappings = 1
 
+if IsPlugged('vaffle.vim')
+    nnoremap TT :<C-u>vs<CR><C-w>h:<C-u>Vaffle ./<CR>
+endif
+
 if IsPlugged('vim-quickrun')
     nnoremap <F9> :<C-u>QuickRun
     if IsPlugged('wandbox-vim')
@@ -734,7 +738,7 @@ if IsPlugged('vim-devicons')
         endif
     endfun
     if !exists('g:loaded_webdevicons')
-        silent HideDevicons
+        silent UseDevicons
     endif
 endif
 

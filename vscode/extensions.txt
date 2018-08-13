@@ -1,7 +1,9 @@
-AndrsDC.base16-themes
+alanz.vscode-hie-server
 DavidAnson.vscode-markdownlint
 EditorConfig.EditorConfig
 fallenwood.vimL
 formulahendry.code-runner
+justusadam.language-haskell
+ms-python.python
 yzhang.markdown-all-in-one
 zhuangtongfa.Material-theme
